@@ -1,0 +1,19 @@
+{
+  "name": "js-libp2p-webrtc",
+  "version": "1.0.0",
+  "description": "Dial peer using webrtc",
+  "main": "index.js",
+  "author": "",
+  "license": "Apache-2.0 or MIT",
+  "type": "module",
+  "scripts": {
+    "build": "aegir build"
+  },
+  "devDependencies": {
+    "aegir": "^37.4.6"
+  },
+  "dependencies": {
+    "@libp2p/interface-transport": "^1.0.2",
+    "@libp2p/interfaces": "^3.0.3"
+  }
+}
