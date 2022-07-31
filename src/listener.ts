@@ -1,12 +1,17 @@
-import { WebRTCTransport } from './transport.js'
 import { WebRTCListenerOptions } from './options.js'
-// import { logger } from '@libp2p/logger'
+// import { WebRTCSocket, HandshakeSignal } from './socket.js'
+// import { WebRTCSocket } from './socket.js'
+import { WebRTCTransport } from './transport.js'
+import { logger } from '@libp2p/logger'
 import type { PeerId } from '@libp2p/interface-peer-id'
 import type { Multiaddr } from '@multiformats/multiaddr'
 import type { ConnectionHandler, Listener, ListenerEvents } from '@libp2p/interface-transport'
 import { EventEmitter, CustomEvent } from '@libp2p/interfaces/events'
+// import { connect } from 'socket.io-client'
 
-// const log = logger('libp2p:webrtc:listener')
+const log = logger('libp2p:webrtc:listener')
+
+// const CODE_P2P = 421;
 
 /*
 const sioOptions = {
@@ -22,78 +27,21 @@ class WebRTCListener extends EventEmitter<ListenerEvents> implements Listener {
 //   private readonly transport: WebRTCTransport
 //   private options?: WebRTCListenerOptions
 //   private readonly handler: ConnectionHandler
-//   private readonly peerId: PeerId
+  private readonly peerId: PeerId
+//   public socket: WebRTCSocket
 
   constructor (handler: ConnectionHandler, peerId: PeerId, transport: WebRTCTransport, options: WebRTCListenerOptions) {
     super()
-
+//     this.socket = connect(signallingUrl, sioOptions)
 //     this.handler = handler
-//     this.peerId = peerId
+    this.peerId = peerId
 //     this.transport = transport
 //     this.options = options
   }
 
   async listen (ma: Multiaddr) {
-    /*
-    // Should only be used if not already listening
-    if (this.listeningAddr != null) {
-      throw errCode(new Error('listener already in use'), 'ERR_ALREADY_LISTENING')
-    }
-
-    const defer = pDefer<void>() // eslint-disable-line @typescript-eslint/no-invalid-void-type
-
-    // Should be kept unmodified
-    this.listeningAddr = ma
-
-    let signallingAddr: Multiaddr
-    if (!ma.protoCodes().includes(CODE_P2P)) {
-      signallingAddr = ma.encapsulate(`/p2p/${this.peerId.toString()}`)
-    } else {
-      signallingAddr = ma
-    }
-
-    this.signallingUrl = cleanUrlSIO(ma)
-
-    log('connecting to signalling server on: %s', this.signallingUrl)
-    const server: SignalServer = new SigServer(this.signallingUrl, signallingAddr, this.upgrader, this.handler, this.options.channelOptions)
-    server.addEventListener('error', (evt) => {
-      const err = evt.detail
-
-      log('error connecting to signalling server %o', err)
-      server.close().catch(err => {
-        log.error('error closing server after error', err)
-      })
-      defer.reject(err)
-    })
-    server.addEventListener('listening', () => {
-      log('connected to signalling server')
-      this.dispatchEvent(new CustomEvent('listening'))
-      defer.resolve()
-    })
-    server.addEventListener('peer', (evt) => {
-      this.transport.peerDiscovered(evt.detail)
-    })
-    server.addEventListener('connection', (evt) => {
-      const conn = evt.detail
-
-      if (conn.remoteAddr == null) {
-        try {
-          conn.remoteAddr = ma.decapsulateCode(CODE_P2P).encapsulate(`/p2p/${conn.remotePeer.toString()}`)
-        } catch (err) {
-          log.error('could not determine remote address', err)
-        }
-      }
-
-      this.dispatchEvent(new CustomEvent('connection', {
-        detail: conn
-      }))
-    })
-
-    // Store listen and signal reference addresses
-    this.transport.sigServers.set(this.signallingUrl, server)
-
-    return await defer.promise
-      */
+    this.listeningAddr = ma;
+    log('peer %s, listen to %s', this.peerId, ma);
   }
 
   async close () {
