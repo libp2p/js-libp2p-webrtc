@@ -3,6 +3,7 @@ import { Multiaddr } from '@multiformats/multiaddr'
 
 const log = logger('libp2p:webrtc:sdp')
 
+const P_XWEBRTC: number = 0x115;
 const SDP_FORMAT: string = `
 v=0
 o=- 0 0 IN %s %s
@@ -36,12 +37,23 @@ function ip(ma: Multiaddr): string {
 function port(ma: Multiaddr): number {
     return ma.toOptions().port;
 }
+function certhash(ma: Multiaddr): string {
+    let webrtc_value = ma.stringTuples().filter(tup => tup[0] == P_XWEBRTC).map(tup => tup[1])[0];
+    if (webrtc_value) {
+        return webrtc_value.split('/')[1];
+    } else {
+        throw new Error("Couldn't find a webrtc component of multiaddr:"+ma.toString());
+    }
+}
 
-export function fromMultiAddr(ma: Multiaddr): string {
+export function fromMultiAddr(ma: Multiaddr, ufrag: string): string {
     return SDP_FORMAT.replace('/%s/', ipv(ma))
         .replace('/%s/', ip(ma))
         .replace('/%s/', ipv(ma))
         .replace('/%s/', ip(ma))
         .replace('/%s/', port(ma).toString())
+        .replace('/%s/', ufrag)
+        .replace('/%s/', ufrag)
+        .replace('/%s/', certhash(ma))
         ;
 }
