@@ -1,13 +1,13 @@
-import { Connection, ConnectionStat, Stream, Direction } from '@libp2p/interface-connection'
-import { PeerId } from '@libp2p/interface-peer-id';
-import { AbortOptions } from '@libp2p/interfaces';
-import { Multiaddr } from '@multiformats/multiaddr';
+import { Connection }  from '@libp2p/interface-connection'
+import {ConnectionStat}from '@libp2p/interface-connection'
+import { Stream, Direction } from '@libp2p/interface-connection'
+import { PeerId }  from '@libp2p/interface-peer-id';
+import { AbortOptions }from '@libp2p/interfaces';
+import { logger }      from '@libp2p/logger'
+import { Multiaddr }   from '@multiformats/multiaddr';
+import {v4 as genUuid} from 'uuid';
 
-// interface WRTC {
-//     RTCPeerConnection: typeof RTCPeerConnection
-//     RTCSessionDescription: typeof RTCSessionDescription
-//     RTCIceCandidate: typeof RTCIceCandidate
-// }
+const log = logger('libp2p:webrtc:connection')
 
 type ConnectionInit = {
     id: string
@@ -18,9 +18,9 @@ type ConnectionInit = {
     direction: Direction
     tags?: string[]
     stat: ConnectionStat
+    pc:  RTCPeerConnection
+    credential_string: string
 }
-
-
 
 export class WebRTCConnection implements Connection {
     id: string;
@@ -31,6 +31,7 @@ export class WebRTCConnection implements Connection {
     streams: Stream[] = [];
     direction: Direction;
 
+
     constructor(init: ConnectionInit) {
         this.streams = []
         this.remotePeer = init.remotePeer
@@ -38,9 +39,13 @@ export class WebRTCConnection implements Connection {
         this.stat = init.stat
         this.id = init.id
         this.direction = init.direction
+        this.peerConnection = init.pc;
+        this.ufrag = init.credential_string;
     }
 
     async newStream(multicodecs: string | string[], options?: AbortOptions): Promise<Stream> {
+        log('TODO',this.ufrag);
+        this.peerConnection.createDataChannel(genUuid());
         throw new Error("not implemented")
     }
 
@@ -53,5 +58,9 @@ export class WebRTCConnection implements Connection {
     async close(): Promise<void> {
         throw new Error("not implemented")
     }
+
+    private peerConnection: RTCPeerConnection;
+	private ufrag: string;
+
 }
 

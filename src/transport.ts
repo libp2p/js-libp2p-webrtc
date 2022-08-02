@@ -1,5 +1,5 @@
 import { WebRTCDialOptions }  from './options';
-import { fromMultiAddr }      from './sdp'
+//import { fromMultiAddr }      from './sdp'
 import { Connection }         from '@libp2p/interface-connection';
 import {CreateListenerOptions}from '@libp2p/interface-transport'
 import {Listener, Transport } from '@libp2p/interface-transport'
@@ -14,7 +14,7 @@ export class WebRTCTransport implements Transport {
 
 	async dial(ma: Multiaddr, options: DialOptions): Promise<Connection> {
 		const rawConn = this._connect(ma, options);
-		log('new outbound connection %s', rawConn);
+		log('new outbound connection %s', rawConn, genUuid());
 		throw new Error("not implemented");
 	}
 
@@ -38,16 +38,8 @@ export class WebRTCTransport implements Transport {
 	}
 
 	_connect (ma: Multiaddr, options: WebRTCDialOptions) {
-		this.channel = this.peer_connection.createDataChannel("data");
-		this.peer_connection.createOffer().then((offer) => this.peer_connection.setLocalDescription(offer));
-		this.channel.onopen = this.todo_cb;
-		this.channel.onclose = this.todo_cb;
-		this.peer_connection.setRemoteDescription(fromMultiAddr(ma, this.uuid));
-
+		//let peerConnection = new RTCPeerConnection();
+		throw new Error("not implemented")
     }
-
-	private peer_connection: RTCPeerConnection = new RTCPeerConnection()
-	private channel?: RTCDataChannel
-	private uuid: string = genUuid();
 
 }
