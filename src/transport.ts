@@ -1,18 +1,14 @@
-import {fromMultiAddr}         from './sdp.js'
-import {Connection}            from '@libp2p/interface-connection';
-import {CreateListenerOptions} from '@libp2p/interface-transport'
-import {Listener, Transport}   from '@libp2p/interface-transport'
-import {DialOptions}           from '@libp2p/interface-transport'
-import {symbol}                from '@libp2p/interface-transport'
-import {logger}                from '@libp2p/logger'
-import {Multiaddr}             from '@multiformats/multiaddr';
-import { v4 }       from 'uuid';
+import { WebRTCDialOptions }  from './options';
+import { fromMultiAddr }      from './sdp'
+import { Connection }         from '@libp2p/interface-connection';
+import {CreateListenerOptions}from '@libp2p/interface-transport'
+import {Listener, Transport } from '@libp2p/interface-transport'
+import {DialOptions, symbol } from '@libp2p/interface-transport'
+import { logger }             from '@libp2p/logger'
+import { Multiaddr }          from '@multiformats/multiaddr';
+import { v4 as genUuid }      from 'uuid';
 
 const log = logger('libp2p:webrtc:transport')
-
-export interface WebRTCDialOptions extends DialOptions {
-//   channelOptions?: WebRTCInitiatorInit
-}
 
 export class WebRTCTransport implements Transport {
 
@@ -52,6 +48,6 @@ export class WebRTCTransport implements Transport {
 
 	private peer_connection: RTCPeerConnection = new RTCPeerConnection()
 	private channel?: RTCDataChannel
-	private uuid: string = v4();
+	private uuid: string = genUuid();
 
 }

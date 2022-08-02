@@ -7,7 +7,8 @@
   "license": "Apache-2.0 or MIT",
   "type": "module",
   "scripts": {
-    "build": "aegir build"
+    "build": "aegir build",
+    "test": "aegir test"
   },
   "devDependencies": {
     "@types/uuid": "^8.3.4",
