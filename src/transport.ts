@@ -1,3 +1,4 @@
+import {fromMultiAddr}         from './sdp.js'
 import {Connection}            from '@libp2p/interface-connection';
 import {CreateListenerOptions} from '@libp2p/interface-transport'
 import {Listener, Transport}   from '@libp2p/interface-transport'
@@ -5,15 +6,12 @@ import {DialOptions}           from '@libp2p/interface-transport'
 import {symbol}                from '@libp2p/interface-transport'
 import {logger}                from '@libp2p/logger'
 import {Multiaddr}             from '@multiformats/multiaddr';
+import { v4 }       from 'uuid';
 
 const log = logger('libp2p:webrtc:transport')
 
 export interface WebRTCDialOptions extends DialOptions {
 //   channelOptions?: WebRTCInitiatorInit
-}
-
-function ma2sdp(ma: Multiaddr): RTCSessionDescription {
-	return new RTCSessionDescription(JSON.parse("{TODO: \"" + ma + "\"}"));
 }
 
 export class WebRTCTransport implements Transport {
@@ -48,11 +46,12 @@ export class WebRTCTransport implements Transport {
 		this.peer_connection.createOffer().then((offer) => this.peer_connection.setLocalDescription(offer));
 		this.channel.onopen = this.todo_cb;
 		this.channel.onclose = this.todo_cb;
-		this.peer_connection.setRemoteDescription(ma2sdp(ma));
+		this.peer_connection.setRemoteDescription(fromMultiAddr(ma, this.uuid));
 
     }
 
 	private peer_connection: RTCPeerConnection = new RTCPeerConnection()
 	private channel?: RTCDataChannel
+	private uuid: string = v4();
 
 }

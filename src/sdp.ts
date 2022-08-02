@@ -22,7 +22,6 @@ a=max-message-size:100000
 `;
 
 function ipv(ma: Multiaddr): string {
-    //TODO: check if we need to support /dns* MAs
     for ( let proto of ma.protoNames() ) {
         if ( proto.startsWith('ip') ) {
             return proto.toUpperCase();
@@ -46,7 +45,7 @@ function certhash(ma: Multiaddr): string {
     }
 }
 
-export function fromMultiAddr(ma: Multiaddr, ufrag: string): string {
+function ma2sdp(ma: Multiaddr, ufrag: string): string {
     return SDP_FORMAT.replace('/%s/', ipv(ma))
         .replace('/%s/', ip(ma))
         .replace('/%s/', ipv(ma))
@@ -56,4 +55,11 @@ export function fromMultiAddr(ma: Multiaddr, ufrag: string): string {
         .replace('/%s/', ufrag)
         .replace('/%s/', certhash(ma))
         ;
+}
+
+export function fromMultiAddr(ma: Multiaddr, ufrag: string): RTCSessionDescriptionInit {
+    return {
+        type: "offer",
+        sdp: ma2sdp(ma,ufrag)
+    };
 }
