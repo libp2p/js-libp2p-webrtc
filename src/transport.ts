@@ -39,6 +39,7 @@ export class WebRTCTransport implements Transport {
 
 	_connect (ma: Multiaddr, options: WebRTCDialOptions) {
 		//let peerConnection = new RTCPeerConnection();
+		//let handshakeChannel = peerConnection.createDataChannel("data", {negotiated: true, id: 1} );
 		throw new Error("not implemented")
     }
 
