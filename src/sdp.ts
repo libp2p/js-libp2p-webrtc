@@ -3,7 +3,8 @@ import { Multiaddr } from '@multiformats/multiaddr'
 
 const log = logger('libp2p:webrtc:sdp')
 
-const P_XWEBRTC: number = 0x115;
+const P_XWEBRTC: number = 0x118;
+// rename to ANSWER_SDP_FORMAT
 const SDP_FORMAT: string = `
 v=0
 o=- 0 0 IN %s %s
@@ -62,4 +63,9 @@ export function fromMultiAddr(ma: Multiaddr, ufrag: string): RTCSessionDescripti
         type: "offer",
         sdp: ma2sdp(ma,ufrag)
     };
+}
+
+function munge(desc: RTCSessionDescription, ufrag: string) {
+	desc.sdp.replaceAll(/^a=ice-ufrag=(.*)/, "a=ice-ufrag="+ufrag)
+	desc.sdp.replaceAll(/^a=ice-pwd=(.*)/, "a=ice-pwd="+ufrag)
 }
