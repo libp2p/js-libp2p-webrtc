@@ -8,6 +8,7 @@
   "type": "module",
   "scripts": {
     "build": "aegir build",
+    "clean": "aegir clean ; rm -rf node_modules/ ; rm package-lock.json ; rm yarn.lock",
     "test": "aegir test --target browser",
     "format": "prettier --write src/*.ts"
   },
