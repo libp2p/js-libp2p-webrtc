@@ -39,7 +39,7 @@ export class WebRTCTransport implements Transport, Initializable {
   }
 
   filter(multiaddrs: Multiaddr[]): Multiaddr[] {
-    return [];
+    return multiaddrs.filter(validMa);
   }
 
   get [Symbol.toStringTag](): string {
@@ -164,3 +164,14 @@ export class WebRTCTransport implements Transport, Initializable {
     return result;
   }
 }
+
+const WEBRTC_CODE: number = 280;
+const CERTHASH_CODE: number = 466;
+
+function validMa(ma: Multiaddr): boolean {
+  let codes = ma.protoCodes();
+  return codes.includes(WEBRTC_CODE) 
+    && codes.includes(CERTHASH_CODE) 
+    && ma.getPeerId() != null;
+}
+
