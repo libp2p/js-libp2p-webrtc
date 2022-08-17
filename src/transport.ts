@@ -51,13 +51,17 @@ export class WebRTCTransport implements Transport, Initializable {
   }
 
   async _connect(ma: Multiaddr, options: WebRTCDialOptions): Promise<Connection> {
+    let rps = ma.getPeerId();
+    if (!rps) {
+      throw inappropriateMultiaddr("we need to have the remote's PeerId");
+    }
+
     let peerConnection = new RTCPeerConnection();
     // create data channel
     let handshakeDataChannel = peerConnection.createDataChannel('data', { negotiated: true, id: 1 });
     //
     // create offer sdp
     let offerSdp = await peerConnection.createOffer();
-    console.log(offerSdp);
     //
     //
     // generate random string for ufrag
@@ -74,7 +78,7 @@ export class WebRTCTransport implements Transport, Initializable {
     //
     // construct answer sdp from multiaddr
     let answerSdp = sdp.fromMultiAddr(ma, ufrag);
-    //
+
     //
     //
     // set remote description
@@ -88,11 +92,9 @@ export class WebRTCTransport implements Transport, Initializable {
     setTimeout(dataChannelOpenPromise.reject, 10000);
     await dataChannelOpenPromise.promise;
 
+    await this.componentsPromise.promise;
+
     let myPeerId = this.components!.getPeerId();
-    let rps = ma.getPeerId();
-    if (!rps) {
-      throw inappropriateMultiaddr("we need to have the remote's PeerId");
-    }
     let theirPeerId = p.peerIdFromString(rps);
 
     // do noise handshake
