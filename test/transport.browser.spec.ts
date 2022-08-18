@@ -5,6 +5,7 @@ import { mockUpgrader } from '@libp2p/interface-mocks';
 import { CreateListenerOptions, symbol } from '@libp2p/interface-transport';
 import { Multiaddr } from '@multiformats/multiaddr';
 import { expect } from 'chai';
+import * as logging from '@libp2p/logger';
 
 function ignoredDialOption(): CreateListenerOptions {
     let u = mockUpgrader({});
@@ -83,5 +84,22 @@ describe('basic transport tests', () => {
             }
         }
     });
+    
+    it('probably more setup needed', async (done) => {
+        logging.enable('libp2p:webrtc:transport');
+        let ma = new Multiaddr('/ip4/1.2.3.4/udp/1234/webrtc/certhash/uEiAUqV7kzvM1wI5DYDc1RbcekYVmXli_Qprlw3IkiEg6tQ/p2p/12D3KooWGDMwwqrpcYKpKCgxuKT2NfqPqa94QnkoBBpqvCaiCzWd');
+        let t = new underTest.WebRTCTransport();
+        try {
+            let conn = await t.dial(ma,ignoredDialOption());
+            expect(conn.toString()).to.equal('Should have thrown');
+        } catch (e) {
+            expect(e).to.be.instanceOf(Error);
+            if (e instanceof Error) {
+                // let err: Error = e;
+                expect(e.message).to.contain('PeerId');
+            }
+        }
+        done();
+    }).timeout(98765);
     
 });

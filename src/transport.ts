@@ -78,6 +78,8 @@ export class WebRTCTransport implements Transport, Initializable {
     //
     // construct answer sdp from multiaddr
     let answerSdp = sdp.fromMultiAddr(ma, ufrag);
+    
+    console.log('Constructed answer SDP from ma %s: %s', ma.toString(), answerSdp.sdp);
 
     //
     //
@@ -88,10 +90,18 @@ export class WebRTCTransport implements Transport, Initializable {
     //
     // wait for peerconnection.onopen to fire, or for the datachannel to open
     let dataChannelOpenPromise = defer();
-    handshakeDataChannel.onopen = (_) => dataChannelOpenPromise.resolve();
-    setTimeout(dataChannelOpenPromise.reject, 10000);
-    await dataChannelOpenPromise.promise;
 
+    handshakeDataChannel.onopen = (_) => dataChannelOpenPromise.resolve();
+    handshakeDataChannel.onerror = (ev: Event) => {
+        log.error('Error opening a data channel for handshaking: %s', ev.toString()); 
+        dataChannelOpenPromise.reject();
+      };
+    setTimeout(() => {
+        log.error('Data channel never opened. %s', handshakeDataChannel.readyState.toString()); 
+        dataChannelOpenPromise.reject() 
+      }, 10000);
+
+    await dataChannelOpenPromise.promise;
     await this.componentsPromise.promise;
 
     let myPeerId = this.components!.getPeerId();
