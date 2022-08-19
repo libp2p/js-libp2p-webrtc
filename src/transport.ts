@@ -6,7 +6,8 @@ import { WebRTCStream } from './stream';
 import { Noise, stablelib } from '@chainsafe/libp2p-noise';
 import { Components, Initializable } from '@libp2p/components';
 import { Connection } from '@libp2p/interface-connection';
-import { CreateListenerOptions, DialOptions, Listener, symbol, Transport } from '@libp2p/interface-transport';
+import type { PeerId } from '@libp2p/interface-peer-id'
+import { CreateListenerOptions, Listener, symbol, Transport } from '@libp2p/interface-transport';
 import { logger } from '@libp2p/logger';
 import { Multiaddr } from '@multiformats/multiaddr';
 import { v4 as genUuid } from 'uuid';
@@ -28,7 +29,7 @@ export class WebRTCTransport implements Transport, Initializable {
     this.components = components;
   }
 
-  async dial(ma: Multiaddr, options: DialOptions): Promise<Connection> {
+  async dial(ma: Multiaddr, options: WebRTCDialOptions): Promise<Connection> {
     const rawConn = await this._connect(ma, options);
     log(`dialing address - ${ma}`);
     return rawConn;
@@ -65,7 +66,14 @@ export class WebRTCTransport implements Transport, Initializable {
     //
     //
     // generate random string for ufrag
-    let ufrag = genUuid();
+    let ufrag: string;
+    if (options.ufrag) {
+      ufrag = options.ufrag;
+      console.log('Using provided ufrag: %s\n', ufrag);
+    } else {
+      ufrag = genUuid();
+    }
+
     //
     //
     // munge sdp with ufrag = pwd
@@ -79,12 +87,13 @@ export class WebRTCTransport implements Transport, Initializable {
     // construct answer sdp from multiaddr
     let answerSdp = sdp.fromMultiAddr(ma, ufrag);
     
-    console.log('Constructed answer SDP from ma %s: %s', ma.toString(), answerSdp.sdp);
+    console.log('Constructed answer SDP from ma %s: \n%s', ma.toString(), answerSdp.sdp);
 
     //
     //
     // set remote description
     peerConnection.setRemoteDescription(answerSdp);
+
     //
     //
     //
@@ -93,18 +102,22 @@ export class WebRTCTransport implements Transport, Initializable {
 
     handshakeDataChannel.onopen = (_) => dataChannelOpenPromise.resolve();
     handshakeDataChannel.onerror = (ev: Event) => {
-        log.error('Error opening a data channel for handshaking: %s', ev.toString()); 
+      console.log('errored'); 
+      console.log('Error opening a data channel for handshaking: %s', ev.toString()); 
+      log.error('Error opening a data channel for handshaking: %s', ev.toString()); 
         dataChannelOpenPromise.reject();
       };
     setTimeout(() => {
-        log.error('Data channel never opened. %s', handshakeDataChannel.readyState.toString()); 
+        console.log('Data channel never opened. State was: %s', handshakeDataChannel.readyState.toString()); 
+        log.error('Data channel never opened. State was: %s', handshakeDataChannel.readyState.toString()); 
         dataChannelOpenPromise.reject() 
       }, 10000);
 
     await dataChannelOpenPromise.promise;
+    console.log('datachannel opened');
     await this.componentsPromise.promise;
 
-    let myPeerId = this.components!.getPeerId();
+    let myPeerId = await this.getPeerId();
     let theirPeerId = p.peerIdFromString(rps);
 
     // do noise handshake
@@ -174,6 +187,11 @@ export class WebRTCTransport implements Transport, Initializable {
 
     let result = concat([prefix, ...fps]);
     return result;
+  }
+
+  public async getPeerId(): Promise<PeerId> {
+    await this.componentsPromise.promise;
+    return this.components!.getPeerId();
   }
 }
 
