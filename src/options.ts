@@ -7,5 +7,4 @@ export interface WebRTCListenerOptions extends CreateListenerOptions {
 }
 
 export interface WebRTCDialOptions extends DialOptions {
-  ufrag?: string,
 }

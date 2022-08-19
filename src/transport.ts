@@ -58,6 +58,7 @@ export class WebRTCTransport implements Transport, Initializable {
     }
 
     let peerConnection = new RTCPeerConnection();
+
     // create data channel
     let handshakeDataChannel = peerConnection.createDataChannel('data', { negotiated: true, id: 1 });
     //
@@ -66,15 +67,8 @@ export class WebRTCTransport implements Transport, Initializable {
     //
     //
     // generate random string for ufrag
-    let ufrag: string;
-    if (options.ufrag) {
-      ufrag = options.ufrag;
-      console.log('Using provided ufrag: %s\n', ufrag);
-    } else {
-      ufrag = genUuid();
-    }
+    let ufrag = genUuid();
 
-    //
     //
     // munge sdp with ufrag = pwd
     offerSdp = sdp.munge(offerSdp, ufrag);
@@ -87,8 +81,6 @@ export class WebRTCTransport implements Transport, Initializable {
     // construct answer sdp from multiaddr
     let answerSdp = sdp.fromMultiAddr(ma, ufrag);
     
-    console.log('Constructed answer SDP from ma %s: \n%s', ma.toString(), answerSdp.sdp);
-
     //
     //
     // set remote description
@@ -102,19 +94,15 @@ export class WebRTCTransport implements Transport, Initializable {
 
     handshakeDataChannel.onopen = (_) => dataChannelOpenPromise.resolve();
     handshakeDataChannel.onerror = (ev: Event) => {
-      console.log('errored'); 
-      console.log('Error opening a data channel for handshaking: %s', ev.toString()); 
       log.error('Error opening a data channel for handshaking: %s', ev.toString()); 
         dataChannelOpenPromise.reject();
       };
     setTimeout(() => {
-        console.log('Data channel never opened. State was: %s', handshakeDataChannel.readyState.toString()); 
         log.error('Data channel never opened. State was: %s', handshakeDataChannel.readyState.toString()); 
         dataChannelOpenPromise.reject() 
       }, 10000);
 
     await dataChannelOpenPromise.promise;
-    console.log('datachannel opened');
     await this.componentsPromise.promise;
 
     let myPeerId = await this.getPeerId();
