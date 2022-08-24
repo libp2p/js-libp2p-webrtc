@@ -13,7 +13,9 @@ export default (create: () => Promise<Transport>) => {
       async setup() {
         const ws = await create();
 
-        const addrs = [multiaddr('/ip4/127.0.0.1/udp/2345/webrtc/certhash/uEiC5LhHPI__aMbu7XAqd2Q4gB-K7YS8flM_lLg4FXE6KiA')];
+        const addrs = [
+          multiaddr('/ip4/127.0.0.1/udp/2345/webrtc/certhash/uEiC5LhHPI__aMbu7XAqd2Q4gB-K7YS8flM_lLg4FXE6KiA/p2p/12D3KooWGDMwwqrpcYKpKCgxuKT2NfqPqa94QnkoBBpqvCaiCzWd'),
+        ];
 
         // Used by the dial tests to simulate a delayed connect
         const connector = {
