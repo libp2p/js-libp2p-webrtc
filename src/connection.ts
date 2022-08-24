@@ -7,11 +7,11 @@ import { v4 as genUuid } from 'uuid';
 import { Components } from '@libp2p/components';
 import defer from 'p-defer';
 import { TimeoutController } from 'timeout-abort-controller';
-import { WebRTCStream } from './stream';
+import { WebRTCStream } from './stream.js';
 import { select as msselect, handle as mshandle } from '@libp2p/multistream-select';
 import { Duplex } from 'it-stream-types';
 import { Uint8ArrayList } from 'uint8arraylist';
-import { dataChannelError, operationAborted, overStreamLimit } from './error';
+import { dataChannelError, operationAborted, overStreamLimit } from './error.js';
 
 const log = logger('libp2p:webrtc:connection');
 

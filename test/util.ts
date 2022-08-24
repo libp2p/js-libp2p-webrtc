@@ -3,12 +3,14 @@ import {createEd25519PeerId} from '@libp2p/peer-id-factory';
 import {mockRegistrar, mockUpgrader} from '@libp2p/interface-mocks';
 import {Components} from '@libp2p/components';
 import defer, {DeferredPromise} from 'p-defer';
-import {WebRTCConnection} from '../src/connection';
-import {Multiaddr} from '@multiformats/multiaddr';
-import {v4} from 'uuid';
-import {Registrar, StreamHandler} from '@libp2p/interface-registrar';
+import { WebRTCConnection } from '../src/connection.js';
+import { v4 } from 'uuid';
+import { Registrar, StreamHandler } from '@libp2p/interface-registrar';
 import { pipe } from 'it-pipe';
 import { logger } from '@libp2p/logger';
+import { Listener, ListenerEvents } from '@libp2p/interface-transport';
+import { Multiaddr } from '@multiformats/multiaddr';
+import { EventEmitter } from '@libp2p/interfaces/events';
 
 const log = logger('libp2p:webrtc:test:util');
 
@@ -19,12 +21,12 @@ export async function createConnectedRTCPeerConnectionPair(): Promise<RTCPeerCon
   log('created peer connections');
   // we don't need auth for a local test but we need a component for candidate gathering
   client.createDataChannel('data');
-  client.onicecandidate = ({candidate}) => {
+  client.onicecandidate = ({ candidate }) => {
     if (candidate !== null) {
       server.addIceCandidate(candidate);
     }
   };
-  server.onicecandidate = ({candidate}) => {
+  server.onicecandidate = ({ candidate }) => {
     if (candidate !== null) {
       client.addIceCandidate(candidate);
     }
@@ -44,7 +46,7 @@ export async function createConnectedRTCPeerConnectionPair(): Promise<RTCPeerCon
       }
     };
     return promise;
-  }
+  };
 
   let clientConnected = resolveOnConnect(client);
   let serverConnected = resolveOnConnect(server);
@@ -58,9 +60,9 @@ export async function createConnectedRTCPeerConnectionPair(): Promise<RTCPeerCon
   await client.setRemoteDescription(serverAnswer);
   log('completed sdp exchange');
 
-  await Promise.all([clientConnected.promise, serverConnected.promise])
+  await Promise.all([clientConnected.promise, serverConnected.promise]);
 
-  log.trace(`clientstate: ${client.connectionState}, serverstate: ${server.connectionState}`)
+  log.trace(`clientstate: ${client.connectionState}, serverstate: ${server.connectionState}`);
 
   // let dc = client.createDataChannel('test');
   // log.trace('awaiting test datachannel opening');
@@ -72,7 +74,7 @@ export async function createConnectedRTCPeerConnectionPair(): Promise<RTCPeerCon
   return [client, server];
 }
 
-export async function createConnectionPair(): Promise<{ connection: ic.Connection, registrar: Registrar }[]> {
+export async function createConnectionPair(): Promise<{ connection: ic.Connection; registrar: Registrar }[]> {
   let [clientPeerId, serverPeerId] = await Promise.all([createEd25519PeerId(), createEd25519PeerId()]);
   let [clientRegistrar, serverRegistrar] = [mockRegistrar(), mockRegistrar()];
   let upgrader = mockUpgrader();
@@ -107,4 +109,29 @@ export async function createConnectionPair(): Promise<{ connection: ic.Connectio
     { connection: clientConnection, registrar: clientRegistrar },
     { connection: serverConnection, registrar: serverRegistrar },
   ];
+}
+
+export class MockListener extends EventEmitter<ListenerEvents> implements Listener {
+  constructor() {
+    super();
+    this.listen = async (ma: Multiaddr) => {};
+    this.getAddrs = () => {
+      return [];
+    };
+    this.close = async () => {};
+    this.listenerCount = (t: string) => {
+      return 0;
+    };
+    this.dispatchEvent = (e: Event) => {
+      return false;
+    };
+    this.addEventListener = (a, b, c) => {};
+    this.removeEventListener = () => {};
+  }
+  listen: (multiaddr: Multiaddr) => Promise<void>;
+  getAddrs: () => Multiaddr[];
+  close: () => Promise<void>;
+  listenerCount: (type: string) => number;
+  removeEventListener: () => void;
+  dispatchEvent: (event: Event) => boolean;
 }
