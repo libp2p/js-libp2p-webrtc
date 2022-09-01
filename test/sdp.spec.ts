@@ -33,7 +33,7 @@ describe('SDP creation', () => {
   it('extracts certhash', () => {
     let ma = new Multiaddr('/ip4/0.0.0.0/udp/56093/webrtc/certhash/uEiByaEfNSLBexWBNFZy_QB1vAKEj7JAXDizRs4_SnTflsQ');
     let c = underTest.certhash(ma);
-    expect(c).to.equal('zQmW3FQvUUnKXmJePum5y2sbfK1qCRfbaw7tVkd8pK1YvJC');
+    expect(c).to.equal('uEiByaEfNSLBexWBNFZy_QB1vAKEj7JAXDizRs4_SnTflsQ');
     const mbdecoder = (function () {
       const decoders = Object.values(bases).map((b) => b.decoder);
       let acc = decoders[0].or(decoders[1]);

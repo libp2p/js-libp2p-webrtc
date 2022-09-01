@@ -14,23 +14,6 @@ const mbdecoder = (function () {
 })();
 
 const CERTHASH_CODE: number = 466;
-const ANSWER_SDP_FORMAT: string = `v=0
-o=- 0 0 IN {IPVERSION} {IP}
-s=-
-c=IN {IPVERSION} {IP}
-t=0 0
-a=ice-lite
-m=application {PORT} UDP/DTLS/SCTP webrtc-datachannel
-a=mid:0
-a=setup:active
-a=ice-options:ice2
-a=ice-ufrag:{UFRAG}
-a=ice-pwd:{UFRAG}
-a=fingerprint:{CERTFP}
-a=sctp-port:5000
-a=max-message-size:100000
-a=candidate:1 1 UDP 1 {IP} {PORT} typ host
-`;
 
 function ipv(ma: Multiaddr): string {
   for (let proto of ma.protoNames()) {
@@ -85,13 +68,26 @@ function certhashToFingerprint(ma: Multiaddr): string {
 }
 
 function ma2sdp(ma: Multiaddr, ufrag: string): string {
-  return ANSWER_SDP_FORMAT.replace('%s', ipv(ma))
-    .replaceAll('{IP}', ip(ma))
-    .replaceAll('{IPVERSION}', ipv(ma))
-    .replaceAll('{PORT}', port(ma).toString())
-    .replaceAll('{UFRAG}', ufrag)
-    .replace('{CERTFP}', certhashToFingerprint(ma))
-    ;
+  const IP = ip(ma);
+  const IPVERSION = ipv(ma);
+  const PORT = port(ma);
+  const CERTFP = certhashToFingerprint(ma);
+  return `v=0
+o=- 0 0 IN ${IPVERSION} ${IP}
+s=-
+c=IN ${IPVERSION} ${IP}
+t=0 0
+a=ice-lite
+m=application ${PORT} UDP/DTLS/SCTP webrtc-datachannel
+a=mid:0
+a=setup:active
+a=ice-options:ice2
+a=ice-ufrag:${ufrag}
+a=ice-pwd:${ufrag}
+a=fingerprint:${CERTFP}
+a=sctp-port:5000
+a=max-message-size:100000
+a=candidate:1 1 UDP 1 ${IP} ${PORT} typ host`;
 }
 
 export function fromMultiAddr(ma: Multiaddr, ufrag: string): RTCSessionDescriptionInit {
