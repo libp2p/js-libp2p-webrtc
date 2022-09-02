@@ -19,6 +19,7 @@ import * as multihashes from 'multihashes';
 import { inappropriateMultiaddr, unimplemented, invalidArgument, unsupportedHashAlgorithm } from './error';
 
 const log = logger('libp2p:webrtc:transport');
+const HANDSHAKE_TIMEOUT_MS = 10000;
 
 export class WebRTCTransport implements Transport, Initializable {
   private componentsPromise: DeferredPromise<void> = defer();
@@ -80,7 +81,7 @@ export class WebRTCTransport implements Transport, Initializable {
     //
     // construct answer sdp from multiaddr
     let answerSdp = sdp.fromMultiAddr(ma, ufrag);
-    
+
     //
     //
     // set remote description
@@ -94,13 +95,13 @@ export class WebRTCTransport implements Transport, Initializable {
 
     handshakeDataChannel.onopen = (_) => dataChannelOpenPromise.resolve();
     handshakeDataChannel.onerror = (ev: Event) => {
-      log.error('Error opening a data channel for handshaking: %s', ev.toString()); 
-        dataChannelOpenPromise.reject();
-      };
+      log.error('Error opening a data channel for handshaking: %s', ev.toString());
+      dataChannelOpenPromise.reject();
+    };
     setTimeout(() => {
-        log.error('Data channel never opened. State was: %s', handshakeDataChannel.readyState.toString()); 
-        dataChannelOpenPromise.reject() 
-      }, 10000);
+      log.error('Data channel never opened. State was: %s', handshakeDataChannel.readyState.toString());
+      dataChannelOpenPromise.reject();
+    }, HANDSHAKE_TIMEOUT_MS);
 
     await dataChannelOpenPromise.promise;
     await this.componentsPromise.promise;
