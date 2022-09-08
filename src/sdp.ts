@@ -72,6 +72,7 @@ function ma2sdp(ma: Multiaddr, ufrag: string): string {
   const IPVERSION = ipv(ma);
   const PORT = port(ma);
   const CERTFP = certhashToFingerprint(ma);
+  const MACH = certhash(ma);
   return `v=0
 o=- 0 0 IN ${IPVERSION} ${IP}
 s=-
@@ -83,11 +84,12 @@ a=mid:0
 a=setup:active
 a=ice-options:ice2
 a=ice-ufrag:${ufrag}
-a=ice-pwd:${ufrag}
+a=ice-pwd:${MACH}
 a=fingerprint:${CERTFP}
 a=sctp-port:5000
 a=max-message-size:100000
-a=candidate:1 1 UDP 1 ${IP} ${PORT} typ host`;
+a=candidate:1 1 UDP 1 ${IP} ${PORT} typ host
+`;
 }
 
 export function fromMultiAddr(ma: Multiaddr, ufrag: string): RTCSessionDescriptionInit {
@@ -97,7 +99,7 @@ export function fromMultiAddr(ma: Multiaddr, ufrag: string): RTCSessionDescripti
   };
 }
 
-export function munge(desc: RTCSessionDescriptionInit, ufrag: string): RTCSessionDescriptionInit {
+export function munge(desc: RTCSessionDescriptionInit, ufrag: string, _: string): RTCSessionDescriptionInit {
   if (desc.sdp) {
     desc.sdp = desc.sdp.replace(/\na=ice-ufrag:[^\n]*\n/, '\na=ice-ufrag:' + ufrag + '\n').replace(/\na=ice-pwd:[^\n]*\n/, '\na=ice-pwd:' + ufrag + '\n');
     return desc;

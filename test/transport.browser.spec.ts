@@ -87,5 +87,12 @@ describe('basic transport tests', () => {
       }
     }
   });
+
+  it('Connects to manually started listener on localhost', async () => {
+    let ma = new Multiaddr('/ip4/192.168.0.152/udp/40972/webrtc/certhash/uEiD0EMqK00oTPBJ87G7uTUePqN-ZXP4tZ70HmcFCdntyhg');
+    let t = new underTest.WebRTCTransport();
+    let conn = await t.dial(ma, ignoredDialOption());
+    expect(conn.id).to.equal('?');
+  });
 });
 

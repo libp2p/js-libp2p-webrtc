@@ -10,7 +10,7 @@ import type { PeerId } from '@libp2p/interface-peer-id'
 import { CreateListenerOptions, Listener, symbol, Transport } from '@libp2p/interface-transport';
 import { logger } from '@libp2p/logger';
 import { Multiaddr } from '@multiformats/multiaddr';
-import { v4 as genUuid } from 'uuid';
+// import { v4 as genUuid } from 'uuid';
 import defer, { DeferredPromise } from 'p-defer';
 import { base64 } from 'multiformats/bases/base64';
 import { fromString as uint8arrayFromString } from 'uint8arrays/from-string';
@@ -19,7 +19,7 @@ import * as multihashes from 'multihashes';
 import { inappropriateMultiaddr, unimplemented, invalidArgument, unsupportedHashAlgorithm } from './error';
 
 const log = logger('libp2p:webrtc:transport');
-const HANDSHAKE_TIMEOUT_MS = 10000;
+const HANDSHAKE_TIMEOUT_MS = 20000;
 
 export class WebRTCTransport implements Transport, Initializable {
   private componentsPromise: DeferredPromise<void> = defer();
@@ -53,7 +53,8 @@ export class WebRTCTransport implements Transport, Initializable {
   }
 
   async _connect(ma: Multiaddr, options: WebRTCDialOptions): Promise<Connection> {
-    let rps = ma.getPeerId();
+    // let rps = ma.getPeerId();
+    let rps = '12D3KooWPHu8yTQneBR4cH2u3byXxZrBWMK8RX9yUhxzxFjHPxhL';
     if (!rps) {
       throw inappropriateMultiaddr("we need to have the remote's PeerId");
     }
@@ -62,18 +63,22 @@ export class WebRTCTransport implements Transport, Initializable {
 
     // create data channel
     let handshakeDataChannel = peerConnection.createDataChannel('data', { negotiated: true, id: 1 });
-    //
+    handshakeDataChannel.onmessage = (m) => {
+      console.log('dc msg=%s', m.toString());
+    };
+
     // create offer sdp
     let offerSdp = await peerConnection.createOffer();
     //
     //
     // generate random string for ufrag
-    let ufrag = genUuid();
+    // let ufrag = genUuid();
+    let ufrag = 'thisufraghasnopunctuation';
 
     //
     // munge sdp with ufrag = pwd
-    offerSdp = sdp.munge(offerSdp, ufrag);
-    //
+    offerSdp = sdp.munge(offerSdp, ufrag, sdp.certhash(ma));
+    console.log('offerSdp=', offerSdp.sdp);
     //
     // set local description
     peerConnection.setLocalDescription(offerSdp);
@@ -93,17 +98,39 @@ export class WebRTCTransport implements Transport, Initializable {
     // wait for peerconnection.onopen to fire, or for the datachannel to open
     let dataChannelOpenPromise = defer();
 
-    handshakeDataChannel.onopen = (_) => dataChannelOpenPromise.resolve();
-    handshakeDataChannel.onerror = (ev: Event) => {
-      log.error('Error opening a data channel for handshaking: %s', ev.toString());
-      dataChannelOpenPromise.reject();
+    handshakeDataChannel.onopen = (_) => {
+      console.log('connected');
+      dataChannelOpenPromise.resolve();
     };
-    setTimeout(() => {
-      log.error('Data channel never opened. State was: %s', handshakeDataChannel.readyState.toString());
-      dataChannelOpenPromise.reject();
-    }, HANDSHAKE_TIMEOUT_MS);
+    handshakeDataChannel.onerror = (ev: Event) => {
+      console.log('dc err %s', ev.toString());
+      log.error('Error opening a data channel for handshaking: %s', ev.toString());
+      dataChannelOpenPromise.reject(new Error('Error event received:' + ev.toString()));
+    };
+    let timeoutHandler = () => {
+      log.error('Data channel never opened.');
+      console.log('in timeout, dc is %s', handshakeDataChannel.readyState.toString());
+      console.log(
+        'timeout dataChannelOpenPromise=%s reject=%s promise=%s',
+        dataChannelOpenPromise.toString(),
+        dataChannelOpenPromise.reject.toString(),
+        dataChannelOpenPromise.promise.toString()
+      );
+      console.log(timeoutHandler);
+      log.error('State was: %s', handshakeDataChannel.readyState.toString());
+      if (dataChannelOpenPromise && dataChannelOpenPromise.reject) {
+        try {
+          dataChannelOpenPromise.reject(new Error('Timed out.'));
+        } catch (e) {
+          console.log('errored so error');
+          console.log(e);
+        }
+      }
+    };
+    setTimeout(timeoutHandler, HANDSHAKE_TIMEOUT_MS);
+    // setTimeout(dataChannelOpenPromise.reject.bind('timeout'), HANDSHAKE_TIMEOUT_MS);
 
-    await this.componentsPromise.promise;
+    await dataChannelOpenPromise.promise;
 
     let myPeerId = await this.getPeerId();
     let theirPeerId = p.peerIdFromString(rps);
