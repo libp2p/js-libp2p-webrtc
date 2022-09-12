@@ -5,8 +5,7 @@ import { expect } from 'aegir/chai';
 import { pipe } from 'it-pipe';
 import first from 'it-first';
 import {fromString} from 'uint8arrays/from-string';
-import {v4} from 'uuid';
-// import { enable as enableLogger } from '@libp2p/logger';
+import { v4 } from 'uuid';
 
 const echoProtocol = '/echo/1.0.0';
 
@@ -42,7 +41,7 @@ describe('connection browser tests', () => {
       break;
     }
     expect(responsed).to.be.true();
-  }).timeout(54321);
+  });
 });
 
 export {};
