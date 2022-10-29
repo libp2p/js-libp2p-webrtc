@@ -11,12 +11,21 @@
       "*": [
         "*",
         "dist/*",
+        "dist/proto_ts/*",
         "dist/src/*",
         "dist/src/*/index"
       ],
       "src/*": [
         "*",
         "dist/*",
+        "dist/proto_ts/*",
+        "dist/src/*",
+        "dist/src/*/index"
+      ],
+      "proto_ts/*": [
+        "*",
+        "dist/*",
+        "dist/proto_ts/*",
         "dist/src/*",
         "dist/src/*/index"
       ]
