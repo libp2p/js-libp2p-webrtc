@@ -40,7 +40,9 @@
   },
   "files": [
     "src",
+    "proto_ts",
     "dist/src",
+    "dist/proto_ts",
     "!dist/test",
     "!**/*.tsbuildinfo"
   ],
