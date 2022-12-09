@@ -16,16 +16,15 @@
 - [Interfaces](#interfaces)
   - [Transport](#transport)
   - [Connection](#connection)
-- [Contribute](#contribute)
+- [Development](#development)
   - [Build](#build)
   - [Protocol Buffers](#protocol-buffers)
   - [Test](#test)
   - [Lint](#lint)
   - [Clean](#clean)
   - [Check Dependencies](#check-dependencies)
-  - [Build a Release](#build-a-release)
 - [License](#license)
-- [Contribute](#contribute-1)
+- [Contribute](#contribute)
 
 ## Install
 
@@ -115,7 +114,7 @@ interface MultiaddrConnection extends Duplex<Uint8Array> {
 class WebRTCMultiaddrConnection implements MultiaddrConnection { }
 ```
 
-## Contribute
+## Development
 
 Contributions are welcome! The libp2p implementation in JavaScript is a work in progress. As such, there's a few things you can do right now to help out:
 
@@ -152,7 +151,7 @@ To run all tests:
 npm test
 ```
 
-To run tests for Chome only:
+To run tests for Chrome only:
 
 ```shell
 npm run test:chrome
@@ -190,12 +189,6 @@ npm run clean
 
 ```shell
 npm run deps-check
-```
-
-### Build a Release
-
-```shell
-npm run release
 ```
 
 ## License
