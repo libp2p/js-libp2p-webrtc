@@ -1,4 +1,4 @@
-# js-libp2p-webrtc <!-- omit in toc -->
+# @libp2p/webrtc <!-- omit in toc -->
 
 [![libp2p.io](https://img.shields.io/badge/project-libp2p-yellow.svg?style=flat-square)](http://libp2p.io/)
 [![Discuss](https://img.shields.io/discourse/https/discuss.libp2p.io/posts.svg?style=flat-square)](https://discuss.libp2p.io)
@@ -30,15 +30,15 @@
 ## Install
 
 ```console
-$ npm i js-libp2p-webrtc
+$ npm i @libp2p/webrtc
 ```
 
 ### Browser `<script>` tag
 
-Loading this module through a script tag will make it's exports available as `JsLibp2pWebrtc` in the global namespace.
+Loading this module through a script tag will make it's exports available as `Libp2pWebrtc` in the global namespace.
 
 ```html
-<script src="https://unpkg.com/js-libp2p-webrtc/dist/index.min.js"></script>
+<script src="https://unpkg.com/@libp2p/webrtc/dist/index.min.js"></script>
 ```
 
 ## Usage
