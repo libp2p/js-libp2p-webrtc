@@ -15,7 +15,7 @@ import { DataChannelMuxerFactory } from './muxer.js'
 import type { WebRTCDialOptions } from './options.js'
 import * as sdp from './sdp.js'
 import { WebRTCStream } from './stream.js'
-import {genUfrag} from './util.js'
+import { genUfrag } from './util.js'
 
 const log = logger('libp2p:webrtc:transport')
 
