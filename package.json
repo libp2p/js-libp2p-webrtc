@@ -137,6 +137,7 @@
   "dependencies": {
     "@chainsafe/libp2p-noise": "^10.0.0",
     "@libp2p/interface-connection": "^3.0.2",
+    "@libp2p/interface-metrics": "^4.0.4",
     "@libp2p/interface-peer-id": "^1.0.5",
     "@libp2p/interface-stream-muxer": "^3.0.0",
     "@libp2p/interface-transport": "^2.0.0",
