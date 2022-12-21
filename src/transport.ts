@@ -141,7 +141,7 @@ export class WebRTCTransport implements Transport {
       dataChannelOpenPromise.reject(dataChannelError('data', error))
     }
 
-    const ufrag = 'libp2p+webrtc+v1/' + genUfrag(20)
+    const ufrag = 'libp2p+webrtc+v1/' + genUfrag(32)
 
     // Create offer and munge sdp with ufrag = pwd. This allows the remote to
     // respond to STUN messages without performing an actual SDP exchange.
