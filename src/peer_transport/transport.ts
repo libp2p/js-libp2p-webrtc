@@ -96,7 +96,14 @@ export class WebRTCPeerTransport implements Transport, Startable {
     if (!options.signal) {
       options.signal = new AbortSignal()
     }
-    const connection = await this.components.transportManager.dial(relayed)
+    let connection
+    try {
+      connection = await this.components.transportManager.dial(relayed)
+    } catch (err) {
+      console.log(err)
+      throw err
+    }
+
     const rawStream = await connection.newStream([PROTOCOL], options)
     const stream = pbStream(abortableDuplex(rawStream, options.signal))
 
