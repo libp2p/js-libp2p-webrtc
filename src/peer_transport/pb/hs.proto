@@ -1,0 +1,14 @@
+syntax = "proto2";
+
+package webrtc_peer.pb;
+
+message Message {
+    enum MessageType {
+        OFFER = 0;
+        ANSWER = 1;
+        CANDIDATE = 2;
+    }
+
+    required MessageType type = 1;
+    required string data = 2;
+}

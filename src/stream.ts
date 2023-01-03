@@ -204,7 +204,6 @@ export class WebRTCStream implements Stream {
    constructor (opts: StreamInitOpts) {
      this.channel = opts.channel
      this.id = this.channel.label
-
      this.stat = opts.stat
      switch (this.channel.readyState) {
        case 'open':
