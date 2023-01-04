@@ -137,6 +137,7 @@
   "dependencies": {
     "@chainsafe/libp2p-noise": "^10.0.0",
     "@libp2p/interface-connection": "^3.0.2",
+    "@libp2p/interface-metrics": "^4.0.4",
     "@libp2p/interface-peer-id": "^1.0.5",
     "@libp2p/interface-stream-muxer": "^3.0.0",
     "@libp2p/interface-transport": "^2.0.0",
@@ -163,6 +164,7 @@
     "@protobuf-ts/protoc": "^2.8.0",
     "aegir": "^37.6.6",
     "it-first": "^2.0.0",
-    "libp2p": "^0.41.0"
+    "libp2p": "^0.41.0",
+    "sinon-ts": "^1.0.0"
   }
 }
