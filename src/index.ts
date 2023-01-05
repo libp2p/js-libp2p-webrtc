@@ -1,5 +1,5 @@
 import type { Transport } from '@libp2p/interface-transport'
-import type {WebRTCPeerTransportComponents, WebRTCPeerTransportInit} from './peer_transport/transport.js'
+import type { WebRTCPeerTransportComponents, WebRTCPeerTransportInit } from './peer_transport/transport.js'
 import { WebRTCPeerTransport } from './peer_transport/transport.js'
 import { WebRTCTransport, WebRTCTransportComponents } from './transport.js'
 

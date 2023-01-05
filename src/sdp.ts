@@ -12,10 +12,11 @@ const log = logger('libp2p:webrtc:sdp')
  * Get base2 | identity decoders
  */
 export const mbdecoder: any = (function () {
-  const decoders = Object.values(bases).map((b) => b.decoder)
-  let acc = decoders[0].or(decoders[1])
-  decoders.slice(2).forEach((d) => (acc = acc.or(d)))
-  return acc
+  // const decoders = Object.values(bases).map((b) => b.decoder)
+  // let acc = decoders[0].or(decoders[1])
+  // decoders.slice(2).forEach((d) => (acc = acc.or(d)))
+  // return acc
+  return bases.base64url.decoder
 })()
 
 /**

@@ -1,23 +1,24 @@
-import {noise as Noise} from '@chainsafe/libp2p-noise'
-import type {Connection} from '@libp2p/interface-connection'
-import type {PeerId} from '@libp2p/interface-peer-id'
-import {CreateListenerOptions, Listener, ListenerEvents, symbol, Transport} from '@libp2p/interface-transport'
-import {logger} from '@libp2p/logger'
-// import * as p from '@libp2p/peer-id'
-import type {Multiaddr} from '@multiformats/multiaddr'
+import { noise as Noise } from '@chainsafe/libp2p-noise'
+import type { Connection } from '@libp2p/interface-connection'
+import type { PeerId } from '@libp2p/interface-peer-id'
+import { CreateListenerOptions, Listener, symbol, Transport } from '@libp2p/interface-transport'
+import { logger } from '@libp2p/logger'
+import * as p from '@libp2p/peer-id'
+import { multiaddr, Multiaddr } from '@multiformats/multiaddr'
 import * as multihashes from 'multihashes'
 import defer from 'p-defer'
-import {v4 as genUuid} from 'uuid'
-import {fromString as uint8arrayFromString} from 'uint8arrays/from-string'
-import {concat} from 'uint8arrays/concat'
+import { v4 as genUuid } from 'uuid'
+import { fromString as uint8arrayFromString } from 'uint8arrays/from-string'
+import { concat } from 'uint8arrays/concat'
 
-import {dataChannelError, inappropriateMultiaddr, invalidArgument} from './error.js'
-import {WebRTCMultiaddrConnection} from './maconn.js'
-import {DataChannelMuxerFactory} from './muxer.js'
-import type {WebRTCDialOptions} from './options.js'
+import { dataChannelError, invalidArgument } from './error.js'
+import { WebRTCMultiaddrConnection } from './maconn.js'
+import { DataChannelMuxerFactory } from './muxer.js'
+import type { WebRTCDialOptions } from './options.js'
 import * as sdp from './sdp.js'
-import {WebRTCStream} from './stream.js'
-import { EventEmitter } from '@libp2p/interfaces/events'
+import { WebRTCStream } from './stream.js'
+import * as mafmt from '@multiformats/mafmt'
+// import { EventEmitter } from '@libp2p/interfaces/events'
 
 const log = logger('libp2p:webrtc:transport')
 
@@ -54,14 +55,14 @@ export class WebRTCTransport implements Transport {
    */
   private readonly components: WebRTCTransportComponents
 
-  constructor(components: WebRTCTransportComponents) {
+  constructor (components: WebRTCTransportComponents) {
     this.components = components
   }
 
   /**
    * Dial a given multiaddr
    */
-  async dial(ma: Multiaddr, options: WebRTCDialOptions): Promise<Connection> {
+  async dial (ma: Multiaddr, options: WebRTCDialOptions): Promise<Connection> {
     const rawConn = await this._connect(ma, options)
     log(`dialing address - ${ma.toString()}`)
     return rawConn
@@ -70,46 +71,43 @@ export class WebRTCTransport implements Transport {
   /**
    * Create transport listeners no supported by browsers
    */
-  createListener(options: CreateListenerOptions): Listener {
-    return Object.assign(new EventEmitter<ListenerEvents>(), {
-      listen: async (_: Multiaddr) => {},
-      getAddrs: () => [],
-      close: async () => {},
-    })
+  createListener (options: CreateListenerOptions): Listener {
+    throw 'browser does not support listening'
+    // return Object.assign(new EventEmitter<ListenerEvents>(), {
+    //   listen: async (_: Multiaddr) => {},
+    //   getAddrs: () => [],
+    //   close: async () => {},
+    // })
   }
 
   /**
    * Takes a list of `Multiaddr`s and returns only valid addresses for the transport
    */
-  filter(multiaddrs: Multiaddr[]): Multiaddr[] {
+  filter (multiaddrs: Multiaddr[]): Multiaddr[] {
     return multiaddrs.filter(validMa)
   }
 
   /**
    * Implement toString() for WebRTCTransport
    */
-  get [Symbol.toStringTag](): string {
+  get [Symbol.toStringTag] (): string {
     return '@libp2p/webrtc'
   }
 
   /**
    * Symbol.for('@libp2p/transport')
    */
-  get [symbol](): true {
+  get [symbol] (): true {
     return true
   }
 
   /**
    * Connect to a peer using a multiaddr
    */
-  async _connect(ma: Multiaddr, options: WebRTCDialOptions): Promise<Connection> {
-    const rps = ma.getPeerId()
-
-    if (rps === null) {
-      throw inappropriateMultiaddr("we need to have the remote's PeerId")
-    }
-
-    const remoteCerthash = sdp.decodeCerthash(sdp.certhash(ma))
+  async _connect (ma: Multiaddr, options: WebRTCDialOptions): Promise<Connection> {
+    const addr = extractDialableMa(ma)
+    const remotePeerId = addr.getPeerId()
+    const remoteCerthash = sdp.decodeCerthash(sdp.certhash(addr))
 
     // ECDSA is preferred over RSA here. From our testing we find that P-256 elliptic
     // curve is supported by Pion, webrtc-rs, as well as Chromium (P-228 and P-384
@@ -120,13 +118,13 @@ export class WebRTCTransport implements Transport {
       namedCurve: 'P-256',
       hash: sdp.toSupportedHashFunction(remoteCerthash.name)
     } as any)
-    const peerConnection = new RTCPeerConnection({certificates: [certificate]})
+    const peerConnection = new RTCPeerConnection({ certificates: [certificate] })
 
     // create data channel for running the noise handshake. Once the data channel is opened,
     // the remote will initiate the noise handshake. This is used to confirm the identity of
     // the peer.
     const dataChannelOpenPromise = defer()
-    const handshakeDataChannel = peerConnection.createDataChannel('handshake', {negotiated: true, id: 0})
+    const handshakeDataChannel = peerConnection.createDataChannel('handshake', { negotiated: true, id: 0 })
     const handhsakeTimeout = setTimeout(() => {
       const error = `Data channel was never opened: state: ${handshakeDataChannel.readyState}`
       log.error(error)
@@ -165,7 +163,7 @@ export class WebRTCTransport implements Transport {
     await dataChannelOpenPromise.promise
 
     const myPeerId = this.components.peerId
-    // const theirPeerId = p.peerIdFromString(rps)
+    const theirPeerId = remotePeerId != null ? p.peerIdFromString(remotePeerId) : undefined
 
     // Do noise handshake.
     // Set the Noise Prologue to libp2p-webrtc-noise:<FINGERPRINTS> before starting the actual Noise handshake.
@@ -174,13 +172,13 @@ export class WebRTCTransport implements Transport {
 
     // Since we use the default crypto interface and do not use a static key or early data,
     // we pass in undefined for these parameters.
-    const noiseInit = {staticNoiseKey: undefined, extensions: undefined, crypto: undefined, prologueBytes: fingerprintsPrologue}
+    const noiseInit = { staticNoiseKey: undefined, extensions: undefined, crypto: undefined, prologueBytes: fingerprintsPrologue }
     const noise = Noise(noiseInit)()
-    const wrappedChannel = new WebRTCStream({channel: handshakeDataChannel, stat: {direction: 'outbound', timeline: {open: 1}}})
+    const wrappedChannel = new WebRTCStream({ channel: handshakeDataChannel, stat: { direction: 'outbound', timeline: { open: 1 } } })
     const wrappedDuplex = {
       ...wrappedChannel,
       source: {
-        [Symbol.asyncIterator]: async function* () {
+        [Symbol.asyncIterator]: async function * () {
           for await (const list of wrappedChannel.source) {
             yield list.subarray()
           }
@@ -192,7 +190,7 @@ export class WebRTCTransport implements Transport {
     // handshake ensures that the stream opening callback is set up
     const maConn = new WebRTCMultiaddrConnection({
       peerConnection,
-      remoteAddr: ma,
+      remoteAddr: addr,
       timeline: {
         open: (new Date()).getTime()
       }
@@ -202,17 +200,17 @@ export class WebRTCTransport implements Transport {
 
     // For outbound connections, the remote is expected to start the noise handshake.
     // Therefore, we need to secure an inbound noise connection from the remote.
-    await noise.secureInbound(myPeerId, wrappedDuplex)
+    await noise.secureInbound(myPeerId, wrappedDuplex, theirPeerId)
+    // maConn.remoteAddr = maConn.remoteAddr.decapsulateCode(421).encapsulate(multiaddr(`/p2p/${secureConn.remotePeer}`))
 
-    await new Promise(res => setTimeout(res, 100))
-    return options.upgrader.upgradeOutbound(maConn, {skipProtection: true, skipEncryption: true, muxerFactory})
+    return await options.upgrader.upgradeOutbound(maConn, { skipProtection: true, skipEncryption: true, muxerFactory })
   }
 
   /**
    * Generate a noise prologue from the peer connection's certificate.
    * noise prologue = bytes('libp2p-webrtc-noise:') + noise-responder fingerprint + noise-initiator fingerprint
    */
-  private generateNoisePrologue(pc: RTCPeerConnection, hashName: multihashes.HashName, ma: Multiaddr): Uint8Array {
+  private generateNoisePrologue (pc: RTCPeerConnection, hashName: multihashes.HashName, ma: Multiaddr): Uint8Array {
     if (pc.getConfiguration().certificates?.length === 0) {
       throw invalidArgument('no local certificate')
     }
@@ -243,7 +241,21 @@ export class WebRTCTransport implements Transport {
  * Determine if a given multiaddr contains a WebRTC Code (280),
  * a Certhash Code (466) and a PeerId
  */
-function validMa(ma: Multiaddr): boolean {
-  const codes = ma.protoCodes()
-  return codes.includes(WEBRTC_CODE) && codes.includes(CERTHASH_CODE) && ma.getPeerId() != null
+function validMa (ma: Multiaddr): boolean {
+  return mafmt.WebRTC.matches(ma)
+}
+
+/**
+ *
+ */
+function extractDialableMa (ma: Multiaddr): Multiaddr {
+  const addrString = ma.toString()
+  const certhash = addrString.match(/\/certhash\/\w+/)
+  const addr = addrString.split(/\/certhash\/\w+/)
+  let result = multiaddr(addr[0] + certhash![0])
+  if (addr.length > 1 && addr[1].startsWith('/p2p')) {
+    const peer = addr[1].match(/\/p2p\/\w+/)![0]
+    result = result.encapsulate(peer)
+  }
+  return result
 }

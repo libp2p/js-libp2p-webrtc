@@ -11,12 +11,13 @@ export class DataChannelMuxerFactory implements StreamMuxerFactory {
    */
   private readonly peerConnection: RTCPeerConnection
 
-  /**
-   * The string representation of the protocol, required by `StreamMuxerFactory`
-   */
-
   constructor (peerConnection: RTCPeerConnection, readonly protocol = '/webrtc') {
     this.peerConnection = peerConnection
+    // reject any datachannels as the muxer is not yet ready to process
+    // streams
+    this.peerConnection.ondatachannel = ({ channel }) => {
+      channel.close()
+    }
   }
 
   createStreamMuxer (init?: StreamMuxerInit | undefined): StreamMuxer {

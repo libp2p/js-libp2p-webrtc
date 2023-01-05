@@ -7,6 +7,7 @@ import { pushable } from 'it-pushable'
 import defer, { DeferredPromise } from 'p-defer'
 import type { Source, Sink } from 'it-stream-types'
 import { Uint8ArrayList } from 'uint8arraylist'
+// import { toString as uint8arrayToString } from 'uint8arrays/to-string'
 
 import * as pb from '../proto_ts/message.js'
 
@@ -197,6 +198,11 @@ export class WebRTCStream implements Stream {
    closeWritePromise: DeferredPromise<void> = defer();
 
    /**
+    * Boolean value specifying if channel was closed locally
+    */
+   localClosed: boolean = false
+
+   /**
     * Callback to invoke when the stream is closed.
     */
    closeCb?: (stream: WebRTCStream) => void
@@ -234,7 +240,9 @@ export class WebRTCStream implements Stream {
      }
 
      this.channel.onclose = (_evt) => {
-       this.close()
+       if (!this.localClosed) {
+         this.close()
+       }
      }
 
      this.channel.onerror = (evt) => {
@@ -245,11 +253,13 @@ export class WebRTCStream implements Stream {
      const self = this
 
      // reader pipe
-     this.channel.onmessage = async ({ data }) => {
-       if (data === null || data.length === 0) {
+     this.channel.onmessage = async ({ data: d }) => {
+       const data = d as ArrayBuffer
+       if (data.byteLength === 0) {
          return
        }
-       this._innersrc.push(new Uint8Array(data as ArrayBufferLike))
+       // console.log('incoming', this.channel.id, (data as ArrayBuffer).byteLength)
+       this._innersrc.push(new Uint8Array(data))
      }
 
      // pipe framed protobuf messages through a length prefixed decoder, and
@@ -261,6 +271,7 @@ export class WebRTCStream implements Stream {
          for await (const buf of source) {
            const message = self.processIncomingProtobuf(buf.subarray())
            if (message != null) {
+             // console.log('read', uint8arrayToString(message))
              yield new Uint8ArrayList(message)
            }
          }
@@ -303,6 +314,8 @@ export class WebRTCStream implements Stream {
        const msgbuf = pb.Message.toBinary({ message: buf.subarray() })
        const sendbuf = lengthPrefixed.encode.single(msgbuf)
 
+       // console.log('wrote ', uint8arrayToString(msgbuf))
+
        this.channel.send(sendbuf.subarray())
      }
    }
@@ -313,7 +326,7 @@ export class WebRTCStream implements Stream {
    processIncomingProtobuf (buffer: Uint8Array): Uint8Array | undefined {
      const message = pb.Message.fromBinary(buffer)
 
-     if (message.flag !== undefined) {
+     if (message.flag) {
        const [currentState, nextState] = this.streamState.transition({ direction: 'inbound', flag: message.flag })
 
        if (currentState !== nextState) {
@@ -340,11 +353,18 @@ export class WebRTCStream implements Stream {
    /**
     * Close a stream for reading and writing
     */
-   close (): void {
+   async close (): Promise<void> {
+     if (this.channel.readyState === 'closed') {
+       return
+     }
+     this.localClosed = true
      this.stat.timeline.close = new Date().getTime()
      this.streamState.state = StreamStates.CLOSED
-     this._innersrc.end()
      this.closeWritePromise.resolve()
+     // await close callback
+     this.channel.addEventListener('close', () => {
+       this._innersrc.end()
+     })
      this.channel.close()
 
      if (this.closeCb !== undefined) {
