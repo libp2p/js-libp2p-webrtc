@@ -13,6 +13,7 @@ import { dataChannelError, inappropriateMultiaddr, unimplemented, invalidArgumen
 import { WebRTCMultiaddrConnection } from './maconn.js'
 import { DataChannelMuxerFactory } from './muxer.js'
 import type { WebRTCDialOptions } from './options.js'
+import type { CounterGroup, Metrics } from '@libp2p/interface-metrics'
 import * as sdp from './sdp.js'
 import { WebRTCStream } from './stream.js'
 import { genUfrag } from './util.js'
@@ -44,6 +45,11 @@ export const CERTHASH_CODE: number = 466
 // @TODO(ddimaria): seems like an unnessary abstraction, consider removing
 export interface WebRTCTransportComponents {
   peerId: PeerId
+  metrics?: Metrics
+}
+
+export interface WebRTCMetrics {
+  dialerEvents: CounterGroup
 }
 
 export class WebRTCTransport implements Transport {
@@ -51,9 +57,18 @@ export class WebRTCTransport implements Transport {
    * The peer for this transport
    */
   private readonly components: WebRTCTransportComponents
+  private readonly metrics?: WebRTCMetrics
 
   constructor (components: WebRTCTransportComponents) {
     this.components = components
+    if (components.metrics != null) {
+      this.metrics = {
+        dialerEvents: components.metrics.registerCounterGroup('libp2p_webrtc_dialer_events_total', {
+          label: 'event',
+          help: 'Total count of WebRTC dial events by type'
+        })
+      }
+    }
   }
 
   /**
@@ -124,6 +139,7 @@ export class WebRTCTransport implements Transport {
     const handhsakeTimeout = setTimeout(() => {
       const error = `Data channel was never opened: state: ${handshakeDataChannel.readyState}`
       log.error(error)
+      this.metrics?.dialerEvents.increment({ openError: true })
       dataChannelOpenPromise.reject(dataChannelError('data', error))
     }, HANDSHAKE_TIMEOUT_MS)
 
@@ -138,6 +154,8 @@ export class WebRTCTransport implements Transport {
       const errorTarget = event.target?.toString() ?? 'not specified'
       const error = `Error opening a data channel for handshaking: ${errorTarget}`
       log.error(error)
+      // NOTE: We use unknown error here but this could potentially be considered a reset by some standards.
+      this.metrics?.dialerEvents.increment({ unknownError: true })
       dataChannelOpenPromise.reject(dataChannelError('data', error))
     }
 
@@ -189,10 +207,14 @@ export class WebRTCTransport implements Transport {
       remoteAddr: ma,
       timeline: {
         open: (new Date()).getTime()
-      }
+      },
+      metrics: this.metrics?.dialerEvents
     })
 
-    const muxerFactory = new DataChannelMuxerFactory(peerConnection)
+    const muxerFactory = new DataChannelMuxerFactory({
+      peerConnection,
+      metrics: this.metrics?.dialerEvents
+    })
 
     // For outbound connections, the remote is expected to start the noise handshake.
     // Therefore, we need to secure an inbound noise connection from the remote.

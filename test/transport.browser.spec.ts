@@ -1,12 +1,15 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 
+import type { Metrics, Metric, MetricGroup, Counter, CounterGroup } from '@libp2p/interface-metrics'
 import * as underTest from './../src/transport.js'
 import { expectError } from './util.js'
 import { UnimplementedError } from './../src/error.js'
+import { stubObject } from 'sinon-ts'
 import { mockUpgrader } from '@libp2p/interface-mocks'
 import { CreateListenerOptions, symbol } from '@libp2p/interface-transport'
 import { multiaddr, Multiaddr } from '@multiformats/multiaddr'
 import { createEd25519PeerId } from '@libp2p/peer-id-factory'
+import * as sinon from 'sinon'
 import { expect, assert } from 'aegir/chai'
 
 function ignoredDialOption (): CreateListenerOptions {
@@ -16,10 +19,51 @@ function ignoredDialOption (): CreateListenerOptions {
 
 describe('WebRTC Transport', () => {
   let components: underTest.WebRTCTransportComponents
+  let metrics: Metrics
 
   before(async () => {
+    metrics = stubObject<Metrics>({
+      trackMultiaddrConnection: (maConn) => {},
+      trackProtocolStream: (stream, connection) => {},
+      registerMetric: (name, options) => {
+        return stubObject<Metric>({
+          increment: () => {},
+          reset: () => {},
+          decrement: () => {},
+          update: () => {},
+          timer: () => {
+            return sinon.spy()
+          }
+        })
+      },
+      registerMetricGroup: (name, options) => {
+        return stubObject<MetricGroup>({
+          increment: () => {
+          },
+          reset: () => {},
+          decrement: () => {},
+          update: () => {},
+          timer: () => {
+            return sinon.spy()
+          }
+        })
+      },
+      registerCounter: (name, options) => {
+        return stubObject<Counter>({
+          increment: () => {},
+          reset: () => {}
+        })
+      },
+      registerCounterGroup: (name, options) => {
+        return stubObject<CounterGroup>({
+          increment: () => {},
+          reset: () => {}
+        })
+      }
+    })
     components = {
-      peerId: await createEd25519PeerId()
+      peerId: await createEd25519PeerId(),
+      metrics
     }
   })
 
