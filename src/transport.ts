@@ -119,7 +119,7 @@ export class WebRTCTransport implements Transport {
     // the remote will initiate the noise handshake. This is used to confirm the identity of
     // the peer.
     const dataChannelOpenPromise = new Promise<RTCDataChannel>((resolve, reject) => {
-      const handshakeDataChannel = peerConnection.createDataChannel('handshake', { negotiated: true, id: 0 })
+      const handshakeDataChannel = peerConnection.createDataChannel('', { negotiated: true, id: 0 })
       const handshakeTimeout = setTimeout(() => {
         const error = `Data channel was never opened: state: ${handshakeDataChannel.readyState}`
         log.error(error)
@@ -167,13 +167,12 @@ export class WebRTCTransport implements Transport {
 
     // Since we use the default crypto interface and do not use a static key or early data,
     // we pass in undefined for these parameters.
-    const noiseInit = { staticNoiseKey: undefined, extensions: undefined, crypto: undefined, prologueBytes: fingerprintsPrologue }
-    const noise = Noise(noiseInit)()
+    const noise = Noise({ prologueBytes: fingerprintsPrologue })()
 
-    // TODO(marco) Should this be direction == inbound?
-    const wrappedChannel = new WebRTCStream({ channel: handshakeDataChannel, stat: { direction: 'outbound', timeline: { open: 1 } } })
+    const wrappedChannel = new WebRTCStream({ channel: handshakeDataChannel, stat: { direction: 'inbound', timeline: { open: 1 } } })
     const wrappedDuplex = {
       ...wrappedChannel,
+      sink: wrappedChannel.sink.bind(wrappedChannel),
       source: {
         [Symbol.asyncIterator]: async function * () {
           for await (const list of wrappedChannel.source) {

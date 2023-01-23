@@ -5,7 +5,7 @@ import merge from 'it-merge'
 import { pipe } from 'it-pipe'
 import { pushable } from 'it-pushable'
 import defer, { DeferredPromise } from 'p-defer'
-import type { Source, Sink } from 'it-stream-types'
+import type { Source } from 'it-stream-types'
 import { Uint8ArrayList } from 'uint8arraylist'
 
 import * as pb from '../proto_ts/message.js'
@@ -194,13 +194,18 @@ export class WebRTCStream implements Stream {
    * Write data to the remote peer.
    * It takes care of wrapping data in a protobuf and adding the length prefix.
    */
-  sink: Sink<Uint8ArrayList | Uint8Array, Promise<void>>;
+  // sink: Sink<Uint8ArrayList | Uint8Array, Promise<void>>;
 
   /**
    * Deferred promise that resolves when the underlying datachannel is in the
    * open state.
    */
   opened: DeferredPromise<void> = defer();
+
+  /**
+   * sinkCreated is set to true once the sinkFunction is invoked
+   */
+  _sinkCalled: boolean = false;
 
   /**
    * Triggers a generator which can be used to close the sink.
@@ -239,9 +244,6 @@ export class WebRTCStream implements Stream {
     }
 
     this.metadata = opts.metadata ?? {}
-
-    // closable sink
-    this.sink = this._sinkFn
 
     // handle RTCDataChannel events
     this.channel.onopen = (_evt) => {
@@ -291,37 +293,33 @@ export class WebRTCStream implements Stream {
     return this._src
   }
 
-  /**
-   * Closable sink
-   */
-  private async _sinkFn (src: Source<Uint8ArrayList | Uint8Array>): Promise<void> {
+  async sink (src: Source<Uint8ArrayList | Uint8Array>): Promise<void> {
+    if (this._sinkCalled) {
+      throw new Error('sink already called on this stream')
+    }
+    // await stream opening before sending data
     await this.opened.promise
-
-    if (this.streamState.isWriteClosed()) {
-      return
+    try {
+      await this._sink(src)
+    } finally {
+      this.closeWrite()
     }
+  }
 
-    const self = this
-    const closeWriteIterable = {
-      async * [Symbol.asyncIterator] () {
-        await self.closeWritePromise.promise
-        yield new Uint8Array(0)
-      }
-    }
-
-    for await (const buf of merge(closeWriteIterable, src)) {
-      if (self.streamState.isWriteClosed()) {
+  /**
+   * Closable sink implementation
+   */
+  private async _sink (src: Source<Uint8ArrayList | Uint8Array>): Promise<void> {
+    const closeWrite = this._closeWriteIterable()
+    for await (const buf of merge(closeWrite, src)) {
+      if (this.streamState.isWriteClosed()) {
         return
       }
-
       const msgbuf = pb.Message.toBinary({ message: buf.subarray() })
       const sendbuf = lengthPrefixed.encode.single(msgbuf)
 
       this.channel.send(sendbuf.subarray())
     }
-
-    // Close the channel after the source has ended
-    this.closeWrite()
   }
 
   /**
@@ -446,6 +444,16 @@ export class WebRTCStream implements Stream {
     } catch (err) {
       if (err instanceof Error) {
         log.error(`Exception while sending flag ${flag}: ${err.message}`)
+      }
+    }
+  }
+
+  private _closeWriteIterable (): Source<Uint8ArrayList | Uint8Array> {
+    const self = this
+    return {
+      async * [Symbol.asyncIterator] () {
+        await self.closeWritePromise.promise
+        yield new Uint8Array(0)
       }
     }
   }
