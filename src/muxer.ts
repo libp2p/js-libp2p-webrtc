@@ -104,7 +104,7 @@ export class DataChannelMuxer implements StreamMuxer {
    * TODO does this comment make sense? The spec says the label SHOULD be an empty string
    */
   newStream (): Stream {
-    // TODO The spec says the label SHOULD be an empty string: https://github.com/libp2p/specs/blob/master/webrtc/README.md#rtcdatachannel-label
+    // The spec says the label SHOULD be an empty string: https://github.com/libp2p/specs/blob/master/webrtc/README.md#rtcdatachannel-label
     const channel = this.peerConnection.createDataChannel('')
     const stream = new WebRTCStream({
       channel,

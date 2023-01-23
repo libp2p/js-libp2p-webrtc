@@ -191,12 +191,6 @@ export class WebRTCStream implements Stream {
   private readonly _innersrc = pushable();
 
   /**
-   * Write data to the remote peer.
-   * It takes care of wrapping data in a protobuf and adding the length prefix.
-   */
-  // sink: Sink<Uint8ArrayList | Uint8Array, Promise<void>>;
-
-  /**
    * Deferred promise that resolves when the underlying datachannel is in the
    * open state.
    */
@@ -293,6 +287,10 @@ export class WebRTCStream implements Stream {
     return this._src
   }
 
+  /**
+   * Write data to the remote peer.
+   * It takes care of wrapping data in a protobuf and adding the length prefix.
+   */
   async sink (src: Source<Uint8ArrayList | Uint8Array>): Promise<void> {
     if (this._sinkCalled) {
       throw new Error('sink already called on this stream')
@@ -332,8 +330,6 @@ export class WebRTCStream implements Stream {
       const [currentState, nextState] = this.streamState.transition({ direction: 'inbound', flag: message.flag })
 
       if (currentState !== nextState) {
-        // @TODO(ddimaria): determine if we need to check for StreamStates.OPEN
-        // Note(marco): StreamStates.OPEN will never be a nextState
         switch (nextState) {
           case StreamStates.READ_CLOSED:
             this._innersrc.end()
@@ -344,6 +340,7 @@ export class WebRTCStream implements Stream {
           case StreamStates.CLOSED:
             this.close()
             break
+          // StreamStates.OPEN will never be a nextState
           case StreamStates.OPEN:
             break
           default:
