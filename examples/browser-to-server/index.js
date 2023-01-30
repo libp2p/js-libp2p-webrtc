@@ -9,7 +9,7 @@ import { pushable } from 'it-pushable';
 let stream;
 const output = document.getElementById('output')
 const sendSection = document.getElementById('send-section')
-const appendOutput = (line) => output.innerText += `${line}\n`
+const appendOutput = (line) => output.innerHTML += `<div>${line}</div>`
 const clean = (line) => line.replaceAll('\n', '')
 const sender = pushable()
 
@@ -27,7 +27,7 @@ node.connectionManager.addEventListener('peer:connect', (connection) => {
 
 window.connect.onclick = async () => {
   const ma = multiaddr(window.peer.value)
-  appendOutput(`Dialing ${ma}`)
+  appendOutput(`Dialing '${ma}'`)
   stream = await node.dialProtocol(ma, ['/echo/1.0.0'])
   pipe(sender, stream, async (src) => {
     for await(const buf of src) {
