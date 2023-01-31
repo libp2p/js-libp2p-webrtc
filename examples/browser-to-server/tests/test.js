@@ -9,16 +9,14 @@ const play = test.extend({
   ...playwright.servers()
 })
 
-async function spinUpGoLibp2p() {
+async function spawnGoLibp2p() {
   if (!existsSync('../../examples/go-libp2p-server/go-libp2p-server')) {
     await new Promise((resolve, reject) => {
       exec('go build',
         { cwd: '../../examples/go-libp2p-server' },
         (error, stdout, stderr) => {
           if (error) {
-            reject(error)
-            console.error(`exec error: ${error}`)
-            return
+            throw (`exec error: ${error}`)
           }
           resolve()
         })
@@ -32,10 +30,10 @@ async function spinUpGoLibp2p() {
   const serverAddr = await (new Promise(resolve => {
     server.stdout.on('data', (data) => {
       console.log(`stdout: ${data}`, typeof data)
-      if (data.includes('p2p addr:  ')) {
-        // Parse the addr out
-        resolve((String(data)).match(/p2p addr:  ([^\s]*)/)[1])
-      }
+      const addr = String(data).match(/p2p addr:  ([^\s]*)/)
+      if (addr !== null && addr.length > 0) {
+        resolve(addr[1])
+      }        
     })
   }))
   return { server, serverAddr }
@@ -55,7 +53,7 @@ play.describe('bundle ipfs with parceljs:', () => {
   // eslint-disable-next-line no-empty-pattern
   play.beforeAll(async ({ }, testInfo) => {
     testInfo.setTimeout(5 * 60_000)
-    const s = await spinUpGoLibp2p()
+    const s = await spawnGoLibp2p()
     server = s.server
     serverAddr = s.serverAddr
     console.log('Server addr:', serverAddr)
