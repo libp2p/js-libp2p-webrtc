@@ -64,12 +64,13 @@ play.describe('bundle ipfs with parceljs:', () => {
   })
 
   play.beforeEach(async ({ servers, page }) => {
-    console.log(`http://localhost:${servers[0].port}/`)
-    await page.goto(`http://localhost:${servers[0].port}/`)
+    const url = `http://localhost:${servers[0].port}/`
+    console.log(url)
+    await page.goto(url)
   })
 
   play('should connect to a go-libp2p node over webtransport', async ({ page }) => {
-    const message = "hello"
+    const message = 'hello'
     
     // add the go libp2p multiaddress to the input field and submit
     await page.fill(connectAddr, serverAddr)
