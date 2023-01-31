@@ -9,7 +9,11 @@ import { pushable } from 'it-pushable';
 let stream;
 const output = document.getElementById('output')
 const sendSection = document.getElementById('send-section')
-const appendOutput = (line) => output.innerHTML += `<div>${line}</div>`
+const appendOutput = (line) => {
+  const div = document.createElement("div")
+  div.appendChild(document.createTextNode(line))
+  output.append(div)
+}
 const clean = (line) => line.replaceAll('\n', '')
 const sender = pushable()
 
