@@ -3,7 +3,7 @@ import { noise } from '@chainsafe/libp2p-noise'
 import { multiaddr } from '@multiformats/multiaddr'
 import { pipe } from "it-pipe";
 import { fromString, toString } from "uint8arrays";
-import { webRTC } from 'js-libp2p-webrtc'
+import { webRTC } from '@libp2p/webrtc'
 import { pushable } from 'it-pushable';
 
 let stream;
