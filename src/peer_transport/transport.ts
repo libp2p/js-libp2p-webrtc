@@ -67,7 +67,7 @@ export class WebRTCPeerTransport implements Transport, Startable {
   }
 
   get [Symbol.toStringTag] (): string {
-    return '@libp2p/webrtc-peer'
+    return '@libp2p/webrtc-direct'
   }
 
   get [symbol] (): true {

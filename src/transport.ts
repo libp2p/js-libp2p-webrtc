@@ -4,7 +4,7 @@ import type { PeerId } from '@libp2p/interface-peer-id'
 import { CreateListenerOptions, Listener, symbol, Transport } from '@libp2p/interface-transport'
 import { logger } from '@libp2p/logger'
 import * as p from '@libp2p/peer-id'
-import { multiaddr, Multiaddr } from '@multiformats/multiaddr'
+import type { Multiaddr } from '@multiformats/multiaddr'
 import * as multihashes from 'multihashes'
 import { fromString as uint8arrayFromString } from 'uint8arrays/from-string'
 import { concat } from 'uint8arrays/concat'
@@ -68,12 +68,7 @@ export class WebRTCTransport implements Transport {
    * Create transport listeners no supported by browsers
    */
   createListener (options: CreateListenerOptions): Listener {
-    throw 'browser does not support listening'
-    // return Object.assign(new EventEmitter<ListenerEvents>(), {
-    //   listen: async (_: Multiaddr) => {},
-    //   getAddrs: () => [],
-    //   close: async () => {},
-    // })
+    throw unimplemented('WebRTCTransport.createListener')
   }
 
   /**
@@ -202,7 +197,6 @@ export class WebRTCTransport implements Transport {
     // For outbound connections, the remote is expected to start the noise handshake.
     // Therefore, we need to secure an inbound noise connection from the remote.
     await noise.secureInbound(myPeerId, wrappedDuplex, theirPeerId)
-    // maConn.remoteAddr = maConn.remoteAddr.decapsulateCode(421).encapsulate(multiaddr(`/p2p/${secureConn.remotePeer}`))
 
     return await options.upgrader.upgradeOutbound(maConn, { skipProtection: true, skipEncryption: true, muxerFactory })
   }
@@ -238,21 +232,11 @@ export class WebRTCTransport implements Transport {
   }
 }
 
-function validMa (ma: Multiaddr): boolean {
-  return mafmt.WebRTC.matches(ma)
-}
-
 /**
- *
+ * Determine if a given multiaddr contains a WebRTC Code (280),
+ * a Certhash Code (466) and a PeerId
  */
-function extractDialableMa (ma: Multiaddr): Multiaddr {
-  const addrString = ma.toString()
-  const certhash = addrString.match(/\/certhash\/\w+/)
-  const addr = addrString.split(/\/certhash\/\w+/)
-  let result = multiaddr(addr[0] + certhash![0])
-  if (addr.length > 1 && addr[1].startsWith('/p2p')) {
-    const peer = addr[1].match(/\/p2p\/\w+/)![0]
-    result = result.encapsulate(peer)
-  }
-  return result
+function validMa (ma: Multiaddr): boolean {
+  const codes = ma.protoCodes()
+  return codes.includes(WEBRTC_CODE) && codes.includes(CERTHASH_CODE) && ma.getPeerId() != null
 }

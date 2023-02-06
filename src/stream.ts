@@ -251,7 +251,6 @@ export class WebRTCStream implements Stream {
     }
 
     this.channel.onerror = (evt) => {
-      // @ts-expect-error
       const err = (evt as RTCErrorEvent).error
       this.abort(err)
     }
