@@ -3,7 +3,7 @@ import { CreateListenerOptions, DialOptions, Listener, symbol, Transport } from 
 import type { ConnectionHandler, TransportManager, Upgrader } from '@libp2p/interface-transport'
 import { multiaddr, Multiaddr } from '@multiformats/multiaddr'
 import type { IncomingStreamData, Registrar } from '@libp2p/interface-registrar'
-import { pbStream, ProtobufStream } from 'it-pb-stream'
+import { pbStream } from 'it-pb-stream'
 import pDefer, { DeferredPromise } from 'p-defer'
 import type { PeerId } from '@libp2p/interface-peer-id'
 import { abortableDuplex } from 'abortable-iterator'
@@ -14,36 +14,34 @@ import { DataChannelMuxerFactory } from '../muxer.js'
 import { WebRTCPeerListener } from './listener.js'
 import type { PeerStore } from '@libp2p/interface-peer-store'
 import { logger } from '@libp2p/logger'
-import * as pb from '../../proto_ts/peer_transport/pb/hs.js'
-// import type { ConnectionManager } from '@libp2p/interface-connection-manager'
-// import * as p from '@libp2p/peer-id'
+import * as pb from './pb/index.js'
+import { readCandidatesUntilConnected } from './util.js'
 
 const log = logger('libp2p:webrtc:peer')
 
 const TIMEOUT = 30 * 1000
-export const TRANSPORT = '/webrtc-peer'
-export const PROTOCOL = '/webrtc-peer/0.0.1'
-export const CODE = 281
+export const TRANSPORT = '/webrtc-direct'
+export const PROTOCOL = '/webrtc-direct/0.0.1'
+export const CODE = 276
 
 export interface WebRTCPeerTransportInit {
   rtcConfiguration?: RTCConfiguration
 }
 
-export interface WebRTCPeerTransportComponents {
+export interface WebRTCDirectTransportComponents {
   peerId: PeerId
   registrar: Registrar
   upgrader: Upgrader
   transportManager: TransportManager
-  // connectionManager: ConnectionManager
   peerStore: PeerStore
 }
 
-export class WebRTCPeerTransport implements Transport, Startable {
+export class WebRTCDirectTransport implements Transport, Startable {
   private readonly _started = false
   private readonly handler?: ConnectionHandler
 
   constructor (
-    private readonly components: WebRTCPeerTransportComponents,
+    private readonly components: WebRTCDirectTransportComponents,
     private readonly init: WebRTCPeerTransportInit
   ) {}
 
@@ -86,87 +84,75 @@ export class WebRTCPeerTransport implements Transport, Startable {
    * and proceeds to upgrade to a webrtc connection.
    * multiaddr of the form: <multiaddr>/webrtc-peer/p2p/<destination-peer>
    * For a circuit relay, this will be of the form
-   * <relay address>/p2p/<relay-peer>/p2p-circuit/p2p/<destination-peer>/webrtc-sdp/p2p/<destination-peer>
+   * <relay address>/p2p/<relay-peer>/p2p-circuit/webrtc-direct/p2p/<destination-peer>
   */
   async dial (ma: Multiaddr, options: DialOptions): Promise<Connection> {
     // extract peer id
-    // const remotePeerId = ma.getPeerId()
     // if (!remotePeerId) {
     //   throw("peerId should be present in multiaddr")
     // }
-    // const remotePeer = p.peerIdFromString(remotePeerId)
-    const addrs = ma.toString().split('/webrtc-peer')
-    const relayed = multiaddr(addrs[0])
-    // const destination = multiaddr(addrs[addrs.length - 1])
-    //
+
+    const addrs = ma.toString().split(TRANSPORT)
+    // look for remote peerId
+    let relayed = multiaddr(addrs[0])
+    const remotePeerId = ma.getPeerId()
+    if (remotePeerId != null) {
+      relayed = relayed.encapsulate(multiaddr(`/p2p/${remotePeerId}`))
+    }
     if (options.signal == null) {
       options.signal = new AbortSignal()
     }
 
     const connection = await this.components.transportManager.dial(relayed)
-
     const rawStream = await connection.newStream([PROTOCOL], options)
-    const stream = pbStream(abortableDuplex(rawStream, options.signal))
+    const stream = pbStream(abortableDuplex(rawStream, options.signal)).pb(pb.Message)
 
+    // setup peer connection
     const pc = new RTCPeerConnection(this.init.rtcConfiguration)
+    // the label is not relevant to connection initiation but can be
+    // useful for debugging
     const channel = pc.createDataChannel('init')
-    const offer = await pc.createOffer()
-    await pc.setLocalDescription(offer)
 
-    const connectedPromise = pDefer<number>()
+    const connectedPromise = pDefer<void>()
     pc.onconnectionstatechange = (_) => {
       switch (pc.connectionState) {
         case 'connected':
-          return connectedPromise.resolve(0)
+          return connectedPromise.resolve()
         case 'closed':
         case 'disconnected':
         case 'failed':
           return connectedPromise.reject()
       }
     }
+
     options.signal.onabort = connectedPromise.reject
+    // setup callback to write ICE candidates to the remote
+    // peer
     pc.onicecandidate = ({ candidate }) => {
-      writeMessage(stream, {
-        type: pb.Message_MessageType.CANDIDATE,
+      stream.write({
+        type: pb.Message.Type.ICE_CANDIDATE,
         data: (candidate != null) ? JSON.stringify(candidate) : ''
       })
     }
-    // write offer
-    writeMessage(stream, { type: pb.Message_MessageType.OFFER, data: offer.sdp! })
 
-    // read answer
-    const answerMessage = await readMessage(stream)
-    if (answerMessage.type != pb.Message_MessageType.ANSWER) {
-      throw new Error('should read answer')
+    // read offer
+    const offerMessage = await stream.read()
+    if (offerMessage.type !== pb.Message.Type.SDP_OFFER) {
+      throw new Error('remote should send an SDP offer')
     }
 
-    const answerSdp = new RTCSessionDescription({ type: 'answer', sdp: answerMessage.data })
-    await pc.setRemoteDescription(answerSdp)
+    const offerSdp = new RTCSessionDescription({ type: 'offer', sdp: offerMessage.data })
+    await pc.setRemoteDescription(offerSdp)
 
-    let continueReading = true
-    while (continueReading) {
-      const result = await Promise.race([connectedPromise.promise, readMessage(stream)])
-      if (result === 0) {
-        break
-      }
+    // create an answer
+    const answerSdp = await pc.createAnswer()
+    // write the answer to the stream
+    stream.write({ type: pb.Message.Type.SDP_ANSWER, data: answerSdp.sdp })
+    // set answer as local description
+    pc.setLocalDescription(answerSdp)
 
-      const message = result as pb.Message
-      if (message.type != pb.Message_MessageType.CANDIDATE) {
-        continue
-      }
+    await readCandidatesUntilConnected(connectedPromise, pc, stream)
 
-      if (message.data == '') {
-        continueReading = false
-        break
-      }
-
-      const candidate = new RTCIceCandidate(JSON.parse(message.data))
-      pc.addIceCandidate(candidate)
-    }
-
-    await connectedPromise.promise
-    rawStream.close()
-    channel.close()
     const result = options.upgrader.upgradeOutbound(
       new WebRTCMultiaddrConnection({
         peerConnection: pc,
@@ -176,35 +162,38 @@ export class WebRTCPeerTransport implements Transport, Startable {
       {
         skipProtection: true,
         skipEncryption: true,
-        muxerFactory: new DataChannelMuxerFactory(pc, '/webrtc-peer')
+        muxerFactory: new DataChannelMuxerFactory(pc, TRANSPORT)
       }
     )
+    // close streams
+    rawStream.close()
+    channel.close()
     void connection.close()
     // TODO: hack
-    await new Promise(res => setTimeout(res, 100))
+    // await new Promise(res => setTimeout(res, 100))
     return await result
   }
 
   async _onProtocol ({ connection, stream: rawStream }: IncomingStreamData) {
     const timeoutController = new TimeoutController(TIMEOUT)
     const signal = timeoutController.signal
-    const stream = pbStream(abortableDuplex(rawStream, timeoutController.signal))
+    const stream = pbStream(abortableDuplex(rawStream, timeoutController.signal)).pb(pb.Message)
     const pc = new RTCPeerConnection(this.init.rtcConfiguration)
 
-    const connectedPromise: DeferredPromise<number> = pDefer()
+    const connectedPromise: DeferredPromise<void> = pDefer()
     signal.onabort = () => connectedPromise.reject()
     // candidate callbacks
     pc.onicecandidate = ({ candidate }) => {
-      writeMessage(stream, {
-        type: pb.Message_MessageType.CANDIDATE,
-        data: (candidate != null) ? JSON.stringify(candidate.toJSON()) : ''
+      stream.write({
+        type: pb.Message.Type.ICE_CANDIDATE,
+        data: (candidate != null) ? JSON.stringify(candidate) : ''
       })
     }
     pc.onconnectionstatechange = (_) => {
       log.trace('received pc state: ', pc.connectionState)
       switch (pc.connectionState) {
         case 'connected':
-          connectedPromise.resolve(0)
+          connectedPromise.resolve()
           break
         case 'failed':
         case 'disconnected':
@@ -213,43 +202,25 @@ export class WebRTCPeerTransport implements Transport, Startable {
       }
     }
 
-    const pbOffer = await readMessage(stream)
-    if (pbOffer.type != pb.Message_MessageType.OFFER) {
-      throw new Error('initial message should be an offer')
+    // create and write an SDP offer
+    const offer = await pc.createOffer()
+    pc.setLocalDescription(offer)
+    stream.write({ type: pb.Message.Type.SDP_OFFER, data: offer.sdp })
+
+    // read an SDP anwer
+    const pbAnswer = await stream.read()
+    if (pbAnswer.type != pb.Message.Type.SDP_ANSWER) {
+      throw new Error('response message should be an SDP answer')
     }
-    const offer = new RTCSessionDescription({
-      type: 'offer',
-      sdp: pbOffer.data
+    const answer = new RTCSessionDescription({
+      type: 'answer',
+      sdp: pbAnswer.data
     })
+    await pc.setRemoteDescription(answer)
 
-    await pc.setRemoteDescription(offer)
-    log.trace('offer', offer)
-    const answer = await pc.createAnswer()
-    await pc.setLocalDescription(answer)
-    writeMessage(stream, { type: pb.Message_MessageType.ANSWER, data: answer.sdp! })
-    log.trace('answer', offer)
-    let continueReading = true
-    while (continueReading) {
-      const result = await Promise.race([connectedPromise.promise, readMessage(stream)])
-      if (result === 0) {
-        break
-      }
-
-      const message = result as pb.Message
-      if (message.type != pb.Message_MessageType.CANDIDATE) {
-        throw new Error('should only receive trickle candidates')
-      }
-      if (message.data === '') {
-        continueReading = false
-        break
-      }
-
-      const candidate = new RTCIceCandidate(JSON.parse(message.data))
-      await pc.addIceCandidate(candidate)
-    }
-    await connectedPromise.promise
-    rawStream.close()
-    const muxerFactory = new DataChannelMuxerFactory(pc, '/webrtc-peer')
+    // wait until candidates are connected
+    await readCandidatesUntilConnected(connectedPromise, pc, stream)
+    const muxerFactory = new DataChannelMuxerFactory(pc, '/webrtc-direct')
     const conn = await this.components.upgrader.upgradeInbound(new WebRTCMultiaddrConnection({
       peerConnection: pc,
       timeline: { open: (new Date()).getTime() },
@@ -259,17 +230,9 @@ export class WebRTCPeerTransport implements Transport, Startable {
       skipProtection: true,
       muxerFactory
     })
+    rawStream.close()
     if (this.handler != null) {
       this.handler(conn)
     }
   }
-}
-
-function writeMessage (stream: ProtobufStream, message: pb.Message) {
-  stream.writeLP(pb.Message.toBinary(message))
-}
-
-async function readMessage (stream: ProtobufStream): Promise<pb.Message> {
-  const raw = await stream.readLP()
-  return pb.Message.fromBinary(raw.subarray())
 }
