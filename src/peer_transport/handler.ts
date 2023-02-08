@@ -32,7 +32,7 @@ export async function handleIncomingStream ({ rtcConfiguration, stream: rawStrea
 
   // setup callback for peerconnection state change
   pc.onconnectionstatechange = (_) => {
-    log.trace('received pc state: ', pc.connectionState)
+    log.trace('receiver peerConnectionState state: ', pc.connectionState)
     switch (pc.connectionState) {
       case 'connected':
         connectedPromise.resolve()
@@ -44,7 +44,6 @@ export async function handleIncomingStream ({ rtcConfiguration, stream: rawStrea
         break
       default:
         break
-        connectedPromise.reject()
     }
   }
   // we create the channel so that the peerconnection has a component for
@@ -53,14 +52,14 @@ export async function handleIncomingStream ({ rtcConfiguration, stream: rawStrea
 
   // create and write an SDP offer
   const offer = await pc.createOffer()
-  pc.setLocalDescription(offer)
+  await pc.setLocalDescription(offer)
   stream.write({ type: pb.Message.Type.SDP_OFFER, data: offer.sdp })
-  log('wrote offer')
 
   // read an SDP anwer
   const pbAnswer = await stream.read()
   if (pbAnswer.type !== pb.Message.Type.SDP_ANSWER) {
-    throw new Error('response message should be an SDP answer')
+    // TODO: Find better way to print undefined without linter complaining
+    throw new Error(`expected message type SDP_ANSWER, received: ${pbAnswer.type ?? 'undefined'} `)
   }
   const answer = new RTCSessionDescription({
     type: 'answer',
@@ -89,7 +88,7 @@ export async function connect ({ rtcConfiguration, signal, stream: rawStream }: 
   // the label is not relevant to connection initiation but can be
   // useful for debugging
 
-  const connectedPromise = pDefer<void>()
+  const connectedPromise = pDefer()
   pc.onconnectionstatechange = (_) => {
     switch (pc.connectionState) {
       case 'connected':
@@ -115,7 +114,6 @@ export async function connect ({ rtcConfiguration, signal, stream: rawStream }: 
 
   // read offer
   const offerMessage = await stream.read()
-  log('read offer')
   if (offerMessage.type !== pb.Message.Type.SDP_OFFER) {
     throw new Error('remote should send an SDP offer')
   }
@@ -128,7 +126,7 @@ export async function connect ({ rtcConfiguration, signal, stream: rawStream }: 
   // write the answer to the stream
   stream.write({ type: pb.Message.Type.SDP_ANSWER, data: answerSdp.sdp })
   // set answer as local description
-  pc.setLocalDescription(answerSdp)
+  await pc.setLocalDescription(answerSdp)
 
   await readCandidatesUntilConnected(connectedPromise, pc, stream)
   return pc

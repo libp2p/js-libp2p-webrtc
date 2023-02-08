@@ -37,14 +37,18 @@ export class WebRTCDirectTransport implements Transport, Startable {
   constructor (
     private readonly components: WebRTCDirectTransportComponents,
     private readonly init: WebRTCPeerTransportInit
-  ) {}
+  ) {
+    this._onProtocol = this._onProtocol.bind(this)
+  }
 
   isStarted () {
     return this._started
   }
 
   async start () {
-    await this.components.registrar.handle(PROTOCOL, this._onProtocol.bind(this))
+    await this.components.registrar.handle(PROTOCOL, (data) => {
+      this._onProtocol(data).catch(err => log.error('failed to handle incoming connect from %p', data.connection.remotePeer, err))
+    })
     // this.components.peerStore.addEventListener('change:multiaddrs', (event) => {
     //   const { peerId } = event.detail
     // })
