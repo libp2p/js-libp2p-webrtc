@@ -23,7 +23,7 @@ export class WebRTCPeerListener extends EventEmitter<ListenerEvents> implements 
       const tpt = this.opts.transportManager.transportForMultiaddr(baseAddr)
       const listener = tpt?.createListener({ ...this.opts })
       await listener?.listen(baseAddr)
-      const listeningAddr = ma.encapsulate(`/p2p/${this.opts.peerId}`)
+      const listeningAddr = ma.encapsulate(`/p2p/${this.opts.peerId.toString()}`)
       this.listeningAddrs.push(listeningAddr)
       listener?.addEventListener('close', () => {
         this.listeningAddrs = this.listeningAddrs.filter(a => a !== listeningAddr)

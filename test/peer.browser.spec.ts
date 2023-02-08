@@ -138,12 +138,25 @@
 //   })
 // })
 
-describe('webrtc_direct handlers', () => {
-    it('handles incoming connection', () => {
+import { mockConnection, mockMultiaddrConnection, mockStream } from '@libp2p/interface-mocks'
+import { createEd25519PeerId } from '@libp2p/peer-id-factory'
+import { expect } from 'aegir/chai'
+import { pair } from 'it-pair'
+import { connect, handleIncomingStream } from '../src/peer_transport/handler'
 
-        
-    })
-
+describe.skip('webrtc_direct handlers', () => {
+  it('handles incoming connection', async () => {
+    const stream = mockStream(pair<any>())
+    const dstPeerId = await createEd25519PeerId()
+    const connection = mockConnection(
+      mockMultiaddrConnection(pair<any>(), dstPeerId)
+    )
+    const controller = new AbortController()
+    const initiatorPromise = connect({ stream, signal: controller.signal })
+    const receiverPromise = handleIncomingStream({ stream, connection })
+    await expect(initiatorPromise).to.be.fulfilled()
+    await expect(receiverPromise).to.be.fulfilled()
+  })
 })
 
-export {}
+export { }
