@@ -119,6 +119,11 @@ export class WebRTCDirectTransport implements Transport, Startable {
 
     rawStream.close()
     void connection.close()
+    // TODO(ckousik): Remove this delay. This is required because
+    // after the connection is initiated, there is a race condition
+    // between creating a new stream and the remote having the datachannel
+    // callbacks, and onStream callbacks set up.
+    await new Promise((resolve) => setTimeout(resolve, 100))
     return await options.upgrader.upgradeOutbound(
       new WebRTCMultiaddrConnection({
         peerConnection: pc,
@@ -131,8 +136,6 @@ export class WebRTCDirectTransport implements Transport, Startable {
         muxerFactory: new DataChannelMuxerFactory(pc, TRANSPORT)
       }
     )
-    // close streams
-    // TODO: hack
   }
 
   async _onProtocol ({ connection, stream }: IncomingStreamData) {

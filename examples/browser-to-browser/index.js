@@ -40,7 +40,7 @@ const node = await createLibp2p({
 await node.start()
 
 // handle the echo protocol
-await node.handle('/echo/1.0.0', ({ stream, connection }) => {
+await node.handle('/echo/1.0.0', ({ stream }) => {
   console.log(stream)
   void pipe(stream, stream)
 })
@@ -64,7 +64,7 @@ window.connect.onclick = async () => {
   appendOutput(`Dialing '${ma}'`)
   const connection = await node.dial(ma)
   console.log('dial completed')
-  stream = await connection.newStream(['/echo/1.0.0'])
+  stream = await connection.newStream(['/echo/1.0.0']).catch((err) => console.log(err))
   pipe(sender, stream, async (src) => {
     for await(const buf of src) {
       const response = toString(buf.subarray())
