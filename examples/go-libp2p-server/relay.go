@@ -6,19 +6,17 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
+
 	// "github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/muxer/mplex"
-	ma "github.com/multiformats/go-multiaddr"
 	relay "github.com/libp2p/go-libp2p/p2p/protocol/circuitv1/relay"
 	webrtc "github.com/libp2p/go-libp2p/p2p/transport/webrtc"
+	ma "github.com/multiformats/go-multiaddr"
 )
 
 var listenerIp = net.IPv4(127, 0, 0, 1)
@@ -67,21 +65,8 @@ func echoHandler(stream network.Stream) {
 
 func main() {
 	makeRelayV1()
-	// host := makeRelayV1()
-	// host.SetStreamHandler("/echo/1.0.0", echoHandler)
-	// defer host.Close()
-	// remoteInfo := peer.AddrInfo{
-	// 	ID:    host.ID(),
-	// 	Addrs: host.Network().ListenAddresses(),
-	// }
-
-	// remoteAddrs, _ := peer.AddrInfoToP2pAddrs(&remoteInfo)
-	// fmt.Println("p2p addr: ", remoteAddrs[0])
-
 	fmt.Println("press Ctrl+C to quit")
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT)
-	<-ch
+	select{}
 }
 
 func createHost() host.Host {
@@ -100,7 +85,7 @@ func createHost() host.Host {
 	return h
 }
 
-func makeRelayV1() {
+func makeRelayV1() host.Host {
 	r := rand.Reader
 	// Generate a key pair for this host. We will use it at least
 	// to obtain a valid host ID.
@@ -114,8 +99,8 @@ func makeRelayV1() {
 		libp2p.ListenAddrStrings(
 			"/ip4/0.0.0.0/tcp/4003/ws",
 		),
-		libp2p.Identity(priv),
 		libp2p.Muxer("/mplex/6.7.0", mplex.DefaultTransport),
+		libp2p.Identity(priv),
 		libp2p.EnableRelay(),
 	}
 
@@ -138,4 +123,5 @@ func makeRelayV1() {
 		}
 		fmt.Println(addr.Encapsulate(a))
 	}
+	return host
 }

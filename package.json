@@ -169,13 +169,14 @@
     "@libp2p/interface-mocks": "^9.0.0",
     "@libp2p/mplex": "^7.1.1",
     "@libp2p/peer-id-factory": "^2.0.0",
-    "@libp2p/websockets": "^5.0.2",
+    "@libp2p/websockets": "^5.0.3",
     "@protobuf-ts/plugin": "^2.8.0",
     "@protobuf-ts/protoc": "^2.8.0",
     "aegir": "^37.6.6",
     "it-first": "^2.0.0",
     "it-pair": "^2.0.3",
     "libp2p": "^0.41.0",
-    "protons": "^6.0.1"
+    "protons": "^6.0.1",
+    "sinon": "^15.0.1"
   }
 }

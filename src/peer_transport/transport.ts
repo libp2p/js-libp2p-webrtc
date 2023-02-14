@@ -14,8 +14,12 @@ import { connect, handleIncomingStream } from './handler.js'
 
 const log = logger('libp2p:webrtc:peer')
 
-export const TRANSPORT = '/webrtc-direct'
-export const PROTOCOL = '/webrtc-direct/0.0.1'
+// TODO(ckousik): This is the wrong protocol name and code. They
+// will be changed to /webrtc-direct, /webrtc-direct/0.0.1, and 281
+// respectively once https://github.com/multiformats/js-multiaddr/pull/309
+// is merged.
+export const TRANSPORT = '/p2p-webrtc-direct'
+export const PROTOCOL = '/p2p-webrtc-direct/0.0.1'
 export const CODE = 276
 
 export interface WebRTCPeerTransportInit {
@@ -49,9 +53,6 @@ export class WebRTCDirectTransport implements Transport, Startable {
     await this.components.registrar.handle(PROTOCOL, (data) => {
       this._onProtocol(data).catch(err => log.error('failed to handle incoming connect from %p', data.connection.remotePeer, err))
     })
-    // this.components.peerStore.addEventListener('change:multiaddrs', (event) => {
-    //   const { peerId } = event.detail
-    // })
   }
 
   async stop () {
@@ -80,25 +81,34 @@ export class WebRTCDirectTransport implements Transport, Startable {
   /*
    * dial connects to a remote via the circuit relay or any other protocol
    * and proceeds to upgrade to a webrtc connection.
-   * multiaddr of the form: <multiaddr>/webrtc-peer/p2p/<destination-peer>
+   * multiaddr of the form: <multiaddr>/webrtc-direct/p2p/<destination-peer>
    * For a circuit relay, this will be of the form
    * <relay address>/p2p/<relay-peer>/p2p-circuit/webrtc-direct/p2p/<destination-peer>
   */
   async dial (ma: Multiaddr, options: DialOptions): Promise<Connection> {
     log.trace('dialing address: ', ma)
     const addrs = ma.toString().split(TRANSPORT)
-    // look for remote peerId
-    let relayed = multiaddr(addrs[0])
-    const remotePeerId = ma.getPeerId()
-    if (remotePeerId != null) {
-      relayed = relayed.encapsulate(multiaddr(`/p2p/${remotePeerId}`))
+    if (addrs.length !== 2) {
+      // TODO(ckousik): Change to errCode
+      throw new Error('invalid multiaddr')
     }
+    // look for remote peerId
+    const remoteAddr = multiaddr(addrs[0])
+    const destination = multiaddr(addrs[1])
+
+    const destinationIdString = destination.getPeerId()
+    if (destinationIdString == null) {
+      // TODO(ckousik): Change to errCode
+      throw new Error('bad destination')
+    }
+
     const controller = new AbortController()
     if (options.signal == null) {
       options.signal = controller.signal
     }
 
-    const connection = await this.components.transportManager.dial(relayed)
+    const connection = await this.components.transportManager.dial(remoteAddr)
+
     const rawStream = await connection.newStream([PROTOCOL], options)
 
     const pc = await connect({
@@ -107,7 +117,9 @@ export class WebRTCDirectTransport implements Transport, Startable {
       signal: options.signal
     })
 
-    const result = options.upgrader.upgradeOutbound(
+    rawStream.close()
+    void connection.close()
+    return await options.upgrader.upgradeOutbound(
       new WebRTCMultiaddrConnection({
         peerConnection: pc,
         timeline: { open: (new Date()).getTime() },
@@ -120,11 +132,7 @@ export class WebRTCDirectTransport implements Transport, Startable {
       }
     )
     // close streams
-    rawStream.close()
-    void connection.close()
     // TODO: hack
-    // await new Promise(res => setTimeout(res, 100))
-    return await result
   }
 
   async _onProtocol ({ connection, stream }: IncomingStreamData) {

@@ -1,12 +1,13 @@
-import { createLibp2p } from 'libp2p'
-import { noise } from '@chainsafe/libp2p-noise'
 import { multiaddr } from '@multiformats/multiaddr'
 import { pipe } from "it-pipe";
 import { fromString, toString } from "uint8arrays";
 import { webRTCDirect } from 'js-libp2p-webrtc'
 import { webSockets } from '@libp2p/websockets'
+import * as filters from '@libp2p/websockets/filters'
 import { pushable } from 'it-pushable';
 import { mplex } from '@libp2p/mplex'
+import { createLibp2p } from 'libp2p';
+import { noise } from '@chainsafe/libp2p-noise';
 
 let stream;
 const output = document.getElementById('output')
@@ -20,28 +21,49 @@ const clean = (line) => line.replaceAll('\n', '')
 const sender = pushable()
 
 const node = await createLibp2p({
-  transports: [webSockets()],
+  transports: [
+    webSockets({
+      filter: filters.all,
+    }),
+    webRTCDirect({}),
+  ],
   connectionEncryption: [noise()],
   streamMuxers: [mplex()],
+  relay: {
+    enabled: true,
+    autoRelay: {
+      enabled: true,
+    },
+  },
 })
 
 await node.start()
 
-node.connectionManager.addEventListener('peer:connect', (connection) => {
-  appendOutput(`Peer connected '${node.getConnections().map(c => c.remoteAddr.toString())}'`)
-  sendSection.style.display = 'block'
+// handle the echo protocol
+await node.handle('/echo/1.0.0', ({ stream, connection }) => {
+  void pipe(stream, stream)
+})
+
+node.peerStore.addEventListener('change:multiaddrs', (event) => {
+  const { peerId } = event.detail
+  if (node.getMultiaddrs().length === 0 || !node.peerId.equals(peerId)) {
+    return
+  }
+  node.getMultiaddrs().forEach((ma) => {
+    if (ma.protoCodes().includes(290)) {
+      const webrtcDirectAddress = ma.encapsulate(multiaddr(`/p2p-webrtc-direct/p2p/${node.peerId}`))
+      appendOutput(`Listening on ${webrtcDirectAddress}`)
+    }
+  })
 })
 
 window.connect.onclick = async () => {
-  const ma = multiaddr('/ip4/127.0.0.1/tcp/56166/ws/p2p/12D3KooWRMcdvWm1eQELXJNaWVowT6cbVwXwsoHDckZx64pXBP9G')
+  const ma = multiaddr(document.getElementById("peer").value)
   appendOutput(`Dialing '${ma}'`)
-  stream = await node.dialProtocol(ma, ['/echo/1.0.0'])
-  pipe(sender, stream, async (src) => {
-    for await(const buf of src) {
-      const response = toString(buf.subarray())
-      appendOutput(`Received message '${clean(response)}'`)
-    }
-  })
+  const connection = await node.dial(ma)
+  console.log('dial completed')
+  stream = await connection.newStream(['/echo/1.0.0'])
+  console.log('stream', stream)
 }
 
 window.send.onclick = async () => {

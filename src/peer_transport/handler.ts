@@ -26,7 +26,7 @@ export async function handleIncomingStream ({ rtcConfiguration, stream: rawStrea
   pc.onicecandidate = ({ candidate }) => {
     stream.write({
       type: pb.Message.Type.ICE_CANDIDATE,
-      data: (candidate != null) ? JSON.stringify(candidate) : ''
+      data: (candidate != null) ? JSON.stringify(candidate.toJSON()) : ''
     })
   }
 
@@ -108,7 +108,7 @@ export async function connect ({ rtcConfiguration, signal, stream: rawStream }: 
   pc.onicecandidate = ({ candidate }) => {
     stream.write({
       type: pb.Message.Type.ICE_CANDIDATE,
-      data: (candidate != null) ? JSON.stringify(candidate) : ''
+      data: (candidate != null) ? JSON.stringify(candidate.toJSON()) : ''
     })
   }
 

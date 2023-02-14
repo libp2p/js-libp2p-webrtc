@@ -1,11 +1,14 @@
-import { mockConnection, mockMultiaddrConnection, mockStream } from '@libp2p/interface-mocks'
+import { mockConnection, mockMultiaddrConnection, mockRegistrar, mockStream, mockUpgrader } from '@libp2p/interface-mocks'
 import { createEd25519PeerId } from '@libp2p/peer-id-factory'
+import { multiaddr } from '@multiformats/multiaddr'
 import { expect } from 'aegir/chai'
 import { pair } from 'it-pair'
 import { duplexPair } from 'it-pair/duplex'
 import { pbStream } from 'it-pb-stream'
+import sinon from 'sinon'
 import { connect, handleIncomingStream } from '../src/peer_transport/handler'
 import { Message } from '../src/peer_transport/pb/index.js'
+import { WebRTCDirectTransport } from '../src/peer_transport/transport'
 
 describe('webrtc direct basic', () => {
   it('should connect', async () => {
@@ -120,6 +123,26 @@ describe('webrtc direct dialer', () => {
     const stream = pbStream(receiver).pb(Message)
     stream.write({ type: Message.Type.SDP_OFFER, data: 'bad' })
     await expect(initiatorPeerConnectionPromise).to.be.rejectedWith(/Failed to execute 'setRemoteDescription'/)
+  })
+})
+
+// TODO(ckousik): This test will fail until https://github.com/multiformats/js-multiaddr/pull/309
+// is merged.
+describe.skip('webrtc direct filter', () => {
+  it('can filter multiaddrs to dial', async () => {
+    const transport = new WebRTCDirectTransport({
+      transportManager: sinon.stub() as any,
+      peerId: sinon.stub() as any,
+      registrar: mockRegistrar(),
+      upgrader: mockUpgrader(),
+      peerStore: sinon.stub() as any
+    }, {})
+
+    const valid = [
+      multiaddr('/ip4/127.0.0.1/tcp/1234/ws/p2p-circuit/webrtc-direct')
+    ]
+
+    expect(transport.filter(valid)).length(1)
   })
 })
 
