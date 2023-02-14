@@ -41,6 +41,7 @@ await node.start()
 
 // handle the echo protocol
 await node.handle('/echo/1.0.0', ({ stream, connection }) => {
+  console.log(stream)
   void pipe(stream, stream)
 })
 
@@ -53,16 +54,23 @@ node.peerStore.addEventListener('change:multiaddrs', (event) => {
     if (ma.protoCodes().includes(290)) {
       const webrtcDirectAddress = ma.encapsulate(multiaddr(`/p2p-webrtc-direct/p2p/${node.peerId}`))
       appendOutput(`Listening on ${webrtcDirectAddress}`)
+      sendSection.style.display = 'block'
     }
   })
 })
 
 window.connect.onclick = async () => {
-  const ma = multiaddr(document.getElementById("peer").value)
+  const ma = multiaddr(window.peer.value)
   appendOutput(`Dialing '${ma}'`)
   const connection = await node.dial(ma)
   console.log('dial completed')
   stream = await connection.newStream(['/echo/1.0.0'])
+  pipe(sender, stream, async (src) => {
+    for await(const buf of src) {
+      const response = toString(buf.subarray())
+      appendOutput(`Received message '${clean(response)}'`)
+    }
+  })
   console.log('stream', stream)
 }
 

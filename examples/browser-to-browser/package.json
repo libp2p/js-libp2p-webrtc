@@ -6,7 +6,7 @@
   "scripts": {
     "start": "vite",
     "build": "vite build",
-    "go-libp2p-server": "cd ../go-libp2p-server && go run ./main.go",
+    "go-libp2p-server": "cd ../go-libp2p-server && go run ./relay.go",
     "test": "npm run build && playwright test tests"
   },
   "dependencies": {
