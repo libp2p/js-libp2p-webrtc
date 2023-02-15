@@ -18,7 +18,7 @@ const log = logger('libp2p:webrtc:peer')
 // respectively once https://github.com/multiformats/js-multiaddr/pull/309
 // is merged.
 export const TRANSPORT = '/p2p-webrtc-direct'
-export const PROTOCOL = '/p2p-webrtc-direct/0.0.1'
+export const PROTOCOL = '/webrtc-signaling/0.0.1'
 export const CODE = 276
 
 export interface WebRTCPeerTransportInit {
