@@ -22,7 +22,7 @@ describe('webrtc direct basic', () => {
     const receiverPeerConnectionPromise = handleIncomingStream({ stream: mockStream(receiver), connection })
     await expect(initiatorPeerConnectionPromise).to.be.fulfilled()
     await expect(receiverPeerConnectionPromise).to.be.fulfilled()
-    const [pc0, pc1] = await Promise.all([initiatorPeerConnectionPromise, receiverPeerConnectionPromise])
+    const [[pc0], [pc1]] = await Promise.all([initiatorPeerConnectionPromise, receiverPeerConnectionPromise])
     expect(pc0.connectionState).eq('connected')
     expect(pc1.connectionState).eq('connected')
   })

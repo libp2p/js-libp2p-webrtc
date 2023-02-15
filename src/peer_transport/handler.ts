@@ -7,6 +7,8 @@ import * as pb from './pb/index.js'
 import { abortableDuplex } from 'abortable-iterator'
 import { logger } from '@libp2p/logger'
 import type { Stream } from '@libp2p/interface-connection'
+import type { StreamMuxerFactory } from '@libp2p/interface-stream-muxer'
+import { DataChannelMuxerFactory } from '../muxer'
 
 const DEFAULT_TIMEOUT = 30 * 1000
 
@@ -14,11 +16,12 @@ const log = logger('libp2p:webrtc:peer')
 
 export type IncomingStreamOpts = { rtcConfiguration?: RTCConfiguration } & IncomingStreamData
 
-export async function handleIncomingStream ({ rtcConfiguration, stream: rawStream }: IncomingStreamOpts): Promise<RTCPeerConnection> {
+export async function handleIncomingStream ({ rtcConfiguration, stream: rawStream }: IncomingStreamOpts): Promise<[RTCPeerConnection, StreamMuxerFactory]> {
   const timeoutController = new TimeoutController(DEFAULT_TIMEOUT)
   const signal = timeoutController.signal
   const stream = pbStream(abortableDuplex(rawStream, timeoutController.signal)).pb(pb.Message)
   const pc = new RTCPeerConnection(rtcConfiguration)
+  const muxerFactory = new DataChannelMuxerFactory(pc)
 
   const connectedPromise: DeferredPromise<void> = pDefer()
   signal.onabort = () => connectedPromise.reject()
@@ -71,7 +74,7 @@ export async function handleIncomingStream ({ rtcConfiguration, stream: rawStrea
   await readCandidatesUntilConnected(connectedPromise, pc, stream)
   // close the dummy channel
   channel.close()
-  return pc
+  return [pc, muxerFactory]
 }
 
 export interface ConnectOptions {
@@ -80,11 +83,12 @@ export interface ConnectOptions {
   rtcConfiguration?: RTCConfiguration
 }
 
-export async function connect ({ rtcConfiguration, signal, stream: rawStream }: ConnectOptions): Promise<RTCPeerConnection> {
+export async function connect ({ rtcConfiguration, signal, stream: rawStream }: ConnectOptions): Promise<[RTCPeerConnection, StreamMuxerFactory]> {
   const stream = pbStream(abortableDuplex(rawStream, signal)).pb(pb.Message)
 
   // setup peer connection
   const pc = new RTCPeerConnection(rtcConfiguration)
+  const muxerFactory = new DataChannelMuxerFactory(pc)
   // the label is not relevant to connection initiation but can be
   // useful for debugging
 
@@ -129,6 +133,6 @@ export async function connect ({ rtcConfiguration, signal, stream: rawStream }: 
   await pc.setLocalDescription(answerSdp)
 
   await readCandidatesUntilConnected(connectedPromise, pc, stream)
-  return pc
+  return [pc, muxerFactory]
 }
 export { }

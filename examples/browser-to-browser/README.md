@@ -2,15 +2,15 @@
 
 This example leverages the [vite bundler](https://vitejs.dev/) to compile and serve the libp2p code in the browser. You can use other bundlers such as Webpack, but we will not be covering them here.
 
-## Running the Go Server
+## Running a relay
 
-To run the Go LibP2P WebRTC server:
+To run the Go LibP2P relay:
 
 ```shell
-npm run go-libp2p-server
+npm run go-relay
 ```
 
-Copy the multiaddress in the output.
+Copy one of the multiaddress in the output.
 
 ## Running the Example
 

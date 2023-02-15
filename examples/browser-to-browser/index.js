@@ -41,8 +41,14 @@ await node.start()
 
 // handle the echo protocol
 await node.handle('/echo/1.0.0', ({ stream }) => {
-  console.log(stream)
-  void pipe(stream, stream)
+  console.log('handling stream: ', stream)
+  void pipe(stream, async function * (source) {
+    for await (const buf of source) {
+      const incoming = toString(buf.subarray())
+      appendOutput('Received from remote: ' + incoming)
+      yield buf
+    }
+  },stream)
 })
 
 node.peerStore.addEventListener('change:multiaddrs', (event) => {
@@ -64,14 +70,17 @@ window.connect.onclick = async () => {
   appendOutput(`Dialing '${ma}'`)
   const connection = await node.dial(ma)
   console.log('dial completed')
-  stream = await connection.newStream(['/echo/1.0.0']).catch((err) => console.log(err))
+  if (!ma.protoCodes().includes(276)) {
+    return
+  }
+  stream = await connection.newStream(['/echo/1.0.0'])
   pipe(sender, stream, async (src) => {
     for await(const buf of src) {
       const response = toString(buf.subarray())
       appendOutput(`Received message '${clean(response)}'`)
     }
   })
-  console.log('stream', stream)
+  console.log('created stream', stream)
 }
 
 window.send.onclick = async () => {

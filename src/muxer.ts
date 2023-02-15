@@ -10,18 +10,29 @@ export class DataChannelMuxerFactory implements StreamMuxerFactory {
    * WebRTC Peer Connection
    */
   private readonly peerConnection: RTCPeerConnection
+  private streamBuffer: WebRTCStream[] = []
 
   constructor (peerConnection: RTCPeerConnection, readonly protocol = '/webrtc') {
     this.peerConnection = peerConnection
     // reject any datachannels as the muxer is not yet ready to process
     // streams
     this.peerConnection.ondatachannel = ({ channel }) => {
-      channel.close()
+      const stream = new WebRTCStream({
+        channel,
+        stat: {
+          direction: 'inbound',
+          timeline: { open: 0 }
+        },
+        closeCb: (_stream) => {
+          this.streamBuffer = this.streamBuffer.filter(s => !_stream.eq(s))
+        }
+      })
+      this.streamBuffer.push(stream)
     }
   }
 
   createStreamMuxer (init?: StreamMuxerInit | undefined): StreamMuxer {
-    return new DataChannelMuxer(this.peerConnection, this.protocol, init)
+    return new DataChannelMuxer(this.peerConnection, this.streamBuffer, this.protocol, init)
   }
 }
 
@@ -59,7 +70,7 @@ export class DataChannelMuxer implements StreamMuxer {
    */
   sink: Sink<Uint8Array, Promise<void>> = nopSink;
 
-  constructor (peerConnection: RTCPeerConnection, readonly protocol = '/webrtc', init?: StreamMuxerInit) {
+  constructor (peerConnection: RTCPeerConnection, streams: Stream[], readonly protocol = '/webrtc', init?: StreamMuxerInit) {
     /**
      * Initialized stream muxer
      */
@@ -85,12 +96,25 @@ export class DataChannelMuxer implements StreamMuxer {
             open: 0
           }
         },
-        closeCb: init?.onStreamEnd
+        closeCb: this.wrapStreamEnd(init?.onIncomingStream)
       })
 
       if ((init?.onIncomingStream) != null) {
         init.onIncomingStream(stream)
       }
+      this.streams.push(stream)
+    }
+
+    if (init?.onIncomingStream != null) {
+      streams.forEach((_stream) => {
+        if (_stream.stat.timeline.close != null) {
+          return
+        }
+        (_stream as WebRTCStream).closeCb = this.wrapStreamEnd(init.onStreamEnd)
+        this.streams.push(_stream)
+        // @ts-expect-error
+        void Promise.resolve().then(() => init?.onIncomingStream(_stream))
+      })
     }
   }
 
@@ -105,9 +129,20 @@ export class DataChannelMuxer implements StreamMuxer {
           open: 0
         }
       },
-      closeCb: this.init?.onStreamEnd
+      closeCb: this.wrapStreamEnd(this.init?.onStreamEnd)
     })
+    this.streams.push(stream)
 
     return stream
+  }
+
+  private wrapStreamEnd (onStreamEnd?: (s: Stream) => void): (stream: Stream) => void {
+    const self = this
+    return (_stream) => {
+      self.streams = self.streams.filter(s => !(_stream instanceof WebRTCStream && (_stream).eq(s)))
+      if (onStreamEnd != null) {
+        onStreamEnd(_stream)
+      }
+    }
   }
 }

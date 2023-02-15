@@ -6,7 +6,6 @@ import type { IncomingStreamData, Registrar } from '@libp2p/interface-registrar'
 import type { PeerId } from '@libp2p/interface-peer-id'
 import { WebRTCMultiaddrConnection } from '../maconn.js'
 import type { Startable } from '@libp2p/interfaces/startable'
-import { DataChannelMuxerFactory } from '../muxer.js'
 import { WebRTCPeerListener } from './listener.js'
 import type { PeerStore } from '@libp2p/interface-peer-store'
 import { logger } from '@libp2p/logger'
@@ -111,19 +110,13 @@ export class WebRTCDirectTransport implements Transport, Startable {
 
     const rawStream = await connection.newStream([PROTOCOL], options)
 
-    const pc = await connect({
+    const [pc, muxerFactory] = await connect({
       stream: rawStream,
       rtcConfiguration: this.init.rtcConfiguration,
       signal: options.signal
     })
 
     rawStream.close()
-    void connection.close()
-    // TODO(ckousik): Remove this delay. This is required because
-    // after the connection is initiated, there is a race condition
-    // between creating a new stream and the remote having the datachannel
-    // callbacks, and onStream callbacks set up.
-    await new Promise((resolve) => setTimeout(resolve, 100))
     return await options.upgrader.upgradeOutbound(
       new WebRTCMultiaddrConnection({
         peerConnection: pc,
@@ -133,18 +126,17 @@ export class WebRTCDirectTransport implements Transport, Startable {
       {
         skipProtection: true,
         skipEncryption: true,
-        muxerFactory: new DataChannelMuxerFactory(pc, TRANSPORT)
+        muxerFactory
       }
     )
   }
 
   async _onProtocol ({ connection, stream }: IncomingStreamData) {
-    const pc = await handleIncomingStream({
+    const [pc, muxerFactory] = await handleIncomingStream({
       rtcConfiguration: this.init.rtcConfiguration,
       connection,
       stream
     })
-    const muxerFactory = new DataChannelMuxerFactory(pc, '/webrtc-direct')
     const conn = await this.components.upgrader.upgradeInbound(new WebRTCMultiaddrConnection({
       peerConnection: pc,
       timeline: { open: (new Date()).getTime() },
