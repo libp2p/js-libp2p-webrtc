@@ -7,6 +7,7 @@
     "start": "vite",
     "build": "vite build",
     "go-relay": "cd ../go-libp2p-server && go run ./relay",
+    "node-relay": "node relay.js",
     "test": "npm run build && playwright test tests"
   },
   "dependencies": {
