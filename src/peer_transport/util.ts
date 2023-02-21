@@ -9,7 +9,7 @@ interface MessageStream {
 
 const log = logger('libp2p:webrtc:peer:util')
 
-export const readCandidatesUntilConnected = async (connectedPromise: DeferredPromise<any>, pc: RTCPeerConnection, stream: MessageStream) => {
+export const readCandidatesUntilConnected = async (connectedPromise: DeferredPromise<any>, pc: RTCPeerConnection, stream: MessageStream): Promise<void> => {
   while (true) {
     const readResult = await Promise.race([connectedPromise.promise, stream.read()])
     // check if readResult is a message

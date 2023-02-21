@@ -17,19 +17,19 @@ export class WebRTCPeerListener extends EventEmitter<ListenerEvents> implements 
     super()
   }
 
-    private listeningAddrs: Multiaddr[] = []
-    async listen (ma: Multiaddr): Promise<void> {
-      const baseAddr = multiaddr(ma.toString().split('/webrtc-peer').find(a => a !== ''))
-      const tpt = this.opts.transportManager.transportForMultiaddr(baseAddr)
-      const listener = tpt?.createListener({ ...this.opts })
-      await listener?.listen(baseAddr)
-      const listeningAddr = ma.encapsulate(`/p2p/${this.opts.peerId.toString()}`)
-      this.listeningAddrs.push(listeningAddr)
-      listener?.addEventListener('close', () => {
-        this.listeningAddrs = this.listeningAddrs.filter(a => a !== listeningAddr)
-      })
-    }
+  private listeningAddrs: Multiaddr[] = []
+  async listen (ma: Multiaddr): Promise<void> {
+    const baseAddr = multiaddr(ma.toString().split('/webrtc-peer').find(a => a !== ''))
+    const tpt = this.opts.transportManager.transportForMultiaddr(baseAddr)
+    const listener = tpt?.createListener({ ...this.opts })
+    await listener?.listen(baseAddr)
+    const listeningAddr = ma.encapsulate(`/p2p/${this.opts.peerId.toString()}`)
+    this.listeningAddrs.push(listeningAddr)
+    listener?.addEventListener('close', () => {
+      this.listeningAddrs = this.listeningAddrs.filter(a => a !== listeningAddr)
+    })
+  }
 
-    getAddrs (): Multiaddr[] { return this.listeningAddrs }
-    async close () { }
+  getAddrs (): Multiaddr[] { return this.listeningAddrs }
+  async close (): Promise<void> { }
 }

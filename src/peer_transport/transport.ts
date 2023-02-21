@@ -44,17 +44,17 @@ export class WebRTCDirectTransport implements Transport, Startable {
     this._onProtocol = this._onProtocol.bind(this)
   }
 
-  isStarted () {
+  isStarted (): boolean {
     return this._started
   }
 
-  async start () {
+  async start (): Promise<void> {
     await this.components.registrar.handle(PROTOCOL, (data) => {
-      this._onProtocol(data).catch(err => log.error('failed to handle incoming connect from %p', data.connection.remotePeer, err))
+      this._onProtocol(data).catch(err => { log.error('failed to handle incoming connect from %p', data.connection.remotePeer, err) })
     })
   }
 
-  async stop () {
+  async stop (): Promise<void> {
     await this.components.registrar.unhandle(PROTOCOL)
   }
 
@@ -139,7 +139,7 @@ export class WebRTCDirectTransport implements Transport, Startable {
     }
   }
 
-  async _onProtocol ({ connection, stream }: IncomingStreamData) {
+  async _onProtocol ({ connection, stream }: IncomingStreamData): Promise<void> {
     let conn
     try {
       const [pc, muxerFactory] = await handleIncomingStream({

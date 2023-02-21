@@ -24,7 +24,7 @@ export async function handleIncomingStream ({ rtcConfiguration, stream: rawStrea
   const muxerFactory = new DataChannelMuxerFactory(pc)
 
   const connectedPromise: DeferredPromise<void> = pDefer()
-  signal.onabort = () => connectedPromise.reject()
+  signal.onabort = () => { connectedPromise.reject() }
   // candidate callbacks
   pc.onicecandidate = ({ candidate }) => {
     stream.write({
@@ -96,11 +96,11 @@ export async function connect ({ rtcConfiguration, signal, stream: rawStream }: 
   pc.onconnectionstatechange = (_) => {
     switch (pc.connectionState) {
       case 'connected':
-        return connectedPromise.resolve()
+      { connectedPromise.resolve(); return }
       case 'closed':
       case 'disconnected':
       case 'failed':
-        return connectedPromise.reject()
+      { connectedPromise.reject(); break }
       default:
     }
   }

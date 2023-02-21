@@ -62,12 +62,12 @@ export class DataChannelMuxer implements StreamMuxer {
   /**
    * The stream source, a no-op as the transport natively supports multiplexing
    */
-  source: Source<Uint8Array> = nopSource;
+  source: Source<Uint8Array> = nopSource
 
   /**
    * The stream destination, a no-op as the transport natively supports multiplexing
    */
-  sink: Sink<Uint8Array, Promise<void>> = nopSink;
+  sink: Sink<Uint8Array, Promise<void>> = nopSink
 
   constructor (peerConnection: RTCPeerConnection, streams: Stream[], readonly protocol = '/webrtc', init?: StreamMuxerInit) {
     /**
@@ -113,7 +113,7 @@ export class DataChannelMuxer implements StreamMuxer {
       })
     const onIncomingStream = init?.onIncomingStream
     if (onIncomingStream != null) {
-      this.streams.forEach(s => onIncomingStream(s))
+      this.streams.forEach(s => { onIncomingStream(s) })
     }
   }
 
