@@ -80,12 +80,15 @@ node.peerStore.addEventListener("change:multiaddrs", (event) => {
   })
 })
 
+const CIRCUIT_RELAY_CODE = 276
+const isCircuitRelayMultiaddr = (ma) => ma.protoCodes().includes(CIRCUIT_RELAY_CODE)
+
 window.connect.onclick = async () => {
   const ma = multiaddr(window.peer.value)
   appendOutput(`Dialing '${ma}'`)
   const connection = await node.dial(ma)
 
-  if (!ma.protoCodes().includes(276)) {
+  if (!isCircuitRelayMultiaddr(ma)) {
     return
   }
 
