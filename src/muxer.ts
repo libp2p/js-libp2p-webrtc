@@ -14,8 +14,7 @@ export class DataChannelMuxerFactory implements StreamMuxerFactory {
 
   constructor (peerConnection: RTCPeerConnection, readonly protocol = '/webrtc') {
     this.peerConnection = peerConnection
-    // reject any datachannels as the muxer is not yet ready to process
-    // streams
+    // store any datachannels opened before upgrade has been completed
     this.peerConnection.ondatachannel = ({ channel }) => {
       const stream = new WebRTCStream({
         channel,
@@ -58,7 +57,7 @@ export class DataChannelMuxer implements StreamMuxer {
   /**
    * Close or abort all tracked streams and stop the muxer
    */
-  close: (err?: Error | undefined) => void = () => {}
+  close: (err?: Error | undefined) => void = () => { }
 
   /**
    * The stream source, a no-op as the transport natively supports multiplexing
@@ -99,22 +98,22 @@ export class DataChannelMuxer implements StreamMuxer {
         closeCb: this.wrapStreamEnd(init?.onIncomingStream)
       })
 
+      this.streams.push(stream)
       if ((init?.onIncomingStream) != null) {
         init.onIncomingStream(stream)
       }
-      this.streams.push(stream)
     }
 
-    if (init?.onIncomingStream != null) {
-      streams.forEach((_stream) => {
-        if (_stream.stat.timeline.close != null) {
-          return
-        }
-        (_stream as WebRTCStream).closeCb = this.wrapStreamEnd(init.onStreamEnd)
-        this.streams.push(_stream)
-        // @ts-expect-error
-        void Promise.resolve().then(() => init?.onIncomingStream(_stream))
+    // wrap open streams with the onStreamEnd callback
+    this.streams = streams
+      .filter(stream => stream.stat.timeline.close == null)
+      .map(stream => {
+        (stream as WebRTCStream).closeCb = this.wrapStreamEnd(init?.onStreamEnd)
+        return stream
       })
+    const onIncomingStream = init?.onIncomingStream
+    if (onIncomingStream != null) {
+      this.streams.forEach(s => onIncomingStream(s))
     }
   }
 

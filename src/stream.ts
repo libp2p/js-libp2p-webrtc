@@ -7,7 +7,6 @@ import { pushable } from 'it-pushable'
 import defer, { DeferredPromise } from 'p-defer'
 import type { Source } from 'it-stream-types'
 import { Uint8ArrayList } from 'uint8arraylist'
-// import { toString as uint8arrayToString } from 'uint8arrays/to-string'
 
 import * as pb from '../proto_ts/message.js'
 

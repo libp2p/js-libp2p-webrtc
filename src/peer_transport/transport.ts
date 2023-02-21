@@ -110,43 +110,57 @@ export class WebRTCDirectTransport implements Transport, Startable {
 
     const rawStream = await connection.newStream([PROTOCOL], options)
 
-    const [pc, muxerFactory] = await connect({
-      stream: rawStream,
-      rtcConfiguration: this.init.rtcConfiguration,
-      signal: options.signal
-    })
+    try {
+      const [pc, muxerFactory] = await connect({
+        stream: rawStream,
+        rtcConfiguration: this.init.rtcConfiguration,
+        signal: options.signal
+      })
+      const result = await options.upgrader.upgradeOutbound(
+        new WebRTCMultiaddrConnection({
+          peerConnection: pc,
+          timeline: { open: (new Date()).getTime() },
+          remoteAddr: connection.remoteAddr
+        }),
+        {
+          skipProtection: true,
+          skipEncryption: true,
+          muxerFactory
+        }
+      )
 
-    rawStream.close()
-    return await options.upgrader.upgradeOutbound(
-      new WebRTCMultiaddrConnection({
-        peerConnection: pc,
-        timeline: { open: (new Date()).getTime() },
-        remoteAddr: connection.remoteAddr
-      }),
-      {
-        skipProtection: true,
-        skipEncryption: true,
-        muxerFactory
-      }
-    )
+      // close the stream if SDP has been exchanged successfully
+      rawStream.close()
+      return result
+    } catch (err) {
+      // reset the stream in case of any error
+      rawStream.reset()
+      throw err
+    }
   }
 
   async _onProtocol ({ connection, stream }: IncomingStreamData) {
-    const [pc, muxerFactory] = await handleIncomingStream({
-      rtcConfiguration: this.init.rtcConfiguration,
-      connection,
-      stream
-    })
-    const conn = await this.components.upgrader.upgradeInbound(new WebRTCMultiaddrConnection({
-      peerConnection: pc,
-      timeline: { open: (new Date()).getTime() },
-      remoteAddr: connection.remoteAddr
-    }), {
-      skipEncryption: true,
-      skipProtection: true,
-      muxerFactory
-    })
-    stream.close()
+    let conn
+    try {
+      const [pc, muxerFactory] = await handleIncomingStream({
+        rtcConfiguration: this.init.rtcConfiguration,
+        connection,
+        stream
+      })
+      conn = await this.components.upgrader.upgradeInbound(new WebRTCMultiaddrConnection({
+        peerConnection: pc,
+        timeline: { open: (new Date()).getTime() },
+        remoteAddr: connection.remoteAddr
+      }), {
+        skipEncryption: true,
+        skipProtection: true,
+        muxerFactory
+      })
+    } catch (err) {
+      stream.reset()
+      throw err
+    }
+
     if (this.handler != null) {
       this.handler(conn)
     }
