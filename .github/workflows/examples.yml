@@ -20,6 +20,7 @@ jobs:
       matrix:
         project:
           - browser-to-server
+          - browser-to-browser
     defaults:
       run:
         working-directory: examples/${{ matrix.project }}

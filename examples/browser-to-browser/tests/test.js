@@ -9,6 +9,18 @@ const play = test.extend({
   ...playwright.servers()
 })
 
+
+// DOM
+const connectBtn = '#connect'
+const connectAddr = '#peer'
+const connectPeerAddr = '#connected_peer'
+const messageInput = '#message'
+const sendBtn = '#send'
+const output = '#output'
+
+const message = 'hello'
+let url
+
 async function spawnGoLibp2p() {
   if (!existsSync('../../examples/go-libp2p-server/go-libp2p-server/relay')) {
     await new Promise((resolve, reject) => {
@@ -40,40 +52,36 @@ async function spawnGoLibp2p() {
 }
 
 play.describe('browser to browser example:', () => {
-  // DOM
-  const connectBtn = '#connect'
-  const connectAddr = '#peer'
-  const connectPeerAddr = '#connected_peer'
-  const messageInput = '#message'
-  const sendBtn = '#send'
-  const output = '#output'
-
   let server
   let serverAddr
 
   // eslint-disable-next-line no-empty-pattern
-  play.beforeAll(async ({ }, testInfo) => {
+  play.beforeAll(async ({ servers }, testInfo) => {
     testInfo.setTimeout(5 * 60_000)
     const s = await spawnGoLibp2p()
     server = s.server
     serverAddr = s.serverAddr
     console.log('Server addr:', serverAddr)
+    url = `http://localhost:${servers[0].port}/`
   }, {})
 
   play.afterAll(() => {
     server.kill('SIGINT')
   })
 
-  play.beforeEach(async ({ servers, page }) => {
-    const url = `http://localhost:${servers[0].port}/`
+  play.beforeEach(async ({ page }) => {
     await page.goto(url)
   })
 
-  play('should connect to a go-libp2p relay node', async ({ page }) => {
-    const message = 'hello'
-    
-    // add the go libp2p multiaddress to the input field and submit
-    await page.fill(connectAddr, serverAddr)
+  play('should connect to a go-libp2p relay node', async ({ page, context }) => {
+    let peer = await per_page(page, serverAddr)
+
+    // load second page and use `peer` as the connectAddr
+    const pageTwo = await context.newPage();
+    await pageTwo.goto(url)
+    let newPeer = await per_page(pageTwo, peer)
+
+    await page.fill(connectAddr, newPeer)
     await page.click(connectBtn)
 
     // send the relay message to the go libp2p server
@@ -81,23 +89,34 @@ play.describe('browser to browser example:', () => {
     await page.click(sendBtn)
 
     await page.waitForSelector('#output:has(div)')
+    const connections = await page.textContent(output)
 
     // Expected output:
     //
-    // Dialing '${serverAddr}'
-    // Peer connected '${peer}'
     // Sending message '${message}'
     // Received message '${message}'
-    const connections = await page.textContent(output)
-
-
-    await page.waitForSelector('#connected_peer:contains(ip)')
-    const peer = await page.textContent(connectPeerAddr)
-    expect(connections).toContain(`Dialing '${serverAddr}'`)
-    expect(connections).toContain(`Listening on '${peer}'`)
-
-    // TODO(ddimaria) load second page and use ${peer} as the connectAddr
     expect(connections).toContain(`Sending message '${message}'`)
-    // expect(connections).toContain(`Received message '${message}'`)
+    expect(connections).toContain(`Received message '${message}'`)
   })
 })
+
+async function per_page(page, address) {
+  // add the go libp2p multiaddress to the input field and submit
+  await page.fill(connectAddr, address)
+  await page.click(connectBtn)
+  await page.fill(messageInput, message)
+
+  await page.waitForSelector('#output:has(div)')
+
+  // Expected output:
+  //
+  // Dialing '${serverAddr}'
+  // Listening on '${peer}'
+  const connections = await page.textContent(output)
+  const peer = await page.textContent(connectPeerAddr)
+
+  expect(connections).toContain(`Dialing '${address}'`)
+  expect(connections).toContain(`Listening on '${peer}'`)
+  
+  return peer
+}
