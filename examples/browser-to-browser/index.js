@@ -15,6 +15,7 @@ let webrtcDirectAddress
 
 const output = document.getElementById("output")
 const sendSection = document.getElementById("send-section")
+const peer = document.getElementById("peer")
 const appendOutput = (line) => {
   const div = document.createElement("div")
   div.appendChild(document.createTextNode(line))
@@ -72,9 +73,10 @@ node.peerStore.addEventListener("change:multiaddrs", (event) => {
 
       // only update if the address is new
       if (newWebrtcDirectAddress?.toString() !== webrtcDirectAddress?.toString()) {
-        appendOutput(`Listening on ${newWebrtcDirectAddress}`)
+        appendOutput(`Listening on '${newWebrtcDirectAddress}'`)
         sendSection.style.display = "block"
         webrtcDirectAddress = newWebrtcDirectAddress
+        connected_peer.innerText = webrtcDirectAddress
       }
     }
   })

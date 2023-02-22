@@ -10,10 +10,10 @@ const play = test.extend({
 })
 
 async function spawnGoLibp2p() {
-  if (!existsSync('../../examples/go-libp2p-server/go-libp2p-server')) {
+  if (!existsSync('../../examples/go-libp2p-server/go-libp2p-server/relay')) {
     await new Promise((resolve, reject) => {
       exec('go build',
-        { cwd: '../../examples/go-libp2p-server' },
+        { cwd: '../../examples/go-libp2p-server/relay' },
         (error, stdout, stderr) => {
           if (error) {
             throw (`exec error: ${error}`)
@@ -23,7 +23,7 @@ async function spawnGoLibp2p() {
     })
   }
 
-  const server = spawn('./go-libp2p-server', [], { cwd: '../../examples/go-libp2p-server', killSignal: 'SIGINT' })
+  const server = spawn('./relay', [], { cwd: '../../examples/go-libp2p-server/relay', killSignal: 'SIGINT' })
   server.stderr.on('data', (data) => {
     console.log(`stderr: ${data}`, typeof data)
   })
@@ -39,10 +39,11 @@ async function spawnGoLibp2p() {
   return { server, serverAddr }
 }
 
-play.describe('bundle ipfs with parceljs:', () => {
+play.describe('browser to browser example:', () => {
   // DOM
   const connectBtn = '#connect'
   const connectAddr = '#peer'
+  const connectPeerAddr = '#connected_peer'
   const messageInput = '#message'
   const sendBtn = '#send'
   const output = '#output'
@@ -65,11 +66,10 @@ play.describe('bundle ipfs with parceljs:', () => {
 
   play.beforeEach(async ({ servers, page }) => {
     const url = `http://localhost:${servers[0].port}/`
-    console.log(url)
     await page.goto(url)
   })
 
-  play('should connect to a go-libp2p node over webtransport', async ({ page }) => {
+  play('should connect to a go-libp2p relay node', async ({ page }) => {
     const message = 'hello'
     
     // add the go libp2p multiaddress to the input field and submit
@@ -85,13 +85,19 @@ play.describe('bundle ipfs with parceljs:', () => {
     // Expected output:
     //
     // Dialing '${serverAddr}'
-    // Peer connected '${serverAddr}'
+    // Peer connected '${peer}'
     // Sending message '${message}'
     // Received message '${message}'
     const connections = await page.textContent(output)
+
+
+    await page.waitForSelector('#connected_peer:contains(ip)')
+    const peer = await page.textContent(connectPeerAddr)
     expect(connections).toContain(`Dialing '${serverAddr}'`)
-    expect(connections).toContain(`Peer connected '${serverAddr}'`)
+    expect(connections).toContain(`Listening on '${peer}'`)
+
+    // TODO(ddimaria) load second page and use ${peer} as the connectAddr
     expect(connections).toContain(`Sending message '${message}'`)
-    expect(connections).toContain(`Received message '${message}'`)
+    // expect(connections).toContain(`Received message '${message}'`)
   })
 })

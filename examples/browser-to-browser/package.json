@@ -13,6 +13,7 @@
   "dependencies": {
     "@chainsafe/libp2p-noise": "^11.0.0",
     "@libp2p/websockets": "^5.0.3",
+    "@libp2p/mplex": "^7.0.0",
     "@multiformats/multiaddr": "^11.0.5",
     "it-pushable": "^3.1.0",
     "js-libp2p-webrtc": "file:../../",
