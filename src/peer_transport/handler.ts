@@ -55,7 +55,11 @@ export async function handleIncomingStream ({ rtcConfiguration, stream: rawStrea
 
   // create and write an SDP offer
   const offer = await pc.createOffer()
-  await pc.setLocalDescription(offer)
+  await pc.setLocalDescription(offer).catch(err => {
+    log.error('could not execute setLocalDescription', err)
+    throw new Error('Failed to set localDescription')
+  })
+
   stream.write({ type: pb.Message.Type.SDP_OFFER, data: offer.sdp })
 
   // read an SDP anwer
@@ -68,7 +72,11 @@ export async function handleIncomingStream ({ rtcConfiguration, stream: rawStrea
     type: 'answer',
     sdp: pbAnswer.data
   })
-  await pc.setRemoteDescription(answer)
+
+  await pc.setRemoteDescription(answer).catch(err => {
+    log.error('could not execute setRemoteDescription', err)
+    throw new Error('Failed to set remoteDescription')
+  })
 
   // wait until candidates are connected
   await readCandidatesUntilConnected(connectedPromise, pc, stream)
@@ -123,14 +131,20 @@ export async function connect ({ rtcConfiguration, signal, stream: rawStream }: 
   }
 
   const offerSdp = new RTCSessionDescription({ type: 'offer', sdp: offerMessage.data })
-  await pc.setRemoteDescription(offerSdp)
+  await pc.setRemoteDescription(offerSdp).catch(err => {
+    log.error('could not execute setRemoteDescription', err)
+    throw new Error('Failed to set remoteDescription')
+  })
 
   // create an answer
   const answerSdp = await pc.createAnswer()
   // write the answer to the stream
   stream.write({ type: pb.Message.Type.SDP_ANSWER, data: answerSdp.sdp })
   // set answer as local description
-  await pc.setLocalDescription(answerSdp)
+  await pc.setLocalDescription(answerSdp).catch(err => {
+    log.error('could not execute setLocalDescription', err)
+    throw new Error('Failed to set localDescription')
+  })
 
   await readCandidatesUntilConnected(connectedPromise, pc, stream)
   return [pc, muxerFactory]

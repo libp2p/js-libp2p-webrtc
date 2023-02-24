@@ -48,7 +48,7 @@ describe('webrtc direct receiver', () => {
     }
 
     stream.write({ type: Message.Type.SDP_ANSWER, data: 'bad' })
-    await expect(receiverPeerConnectionPromise).to.be.rejectedWith(/Failed to execute 'setRemoteDescription'/)
+    await expect(receiverPeerConnectionPromise).to.be.rejectedWith(/Failed to set remoteDescription/)
   })
 
   it('should fail on receiving candidate before answer', async () => {
@@ -122,7 +122,7 @@ describe('webrtc direct dialer', () => {
     const initiatorPeerConnectionPromise = connect({ stream: mockStream(initiator), signal: controller.signal })
     const stream = pbStream(receiver).pb(Message)
     stream.write({ type: Message.Type.SDP_OFFER, data: 'bad' })
-    await expect(initiatorPeerConnectionPromise).to.be.rejectedWith(/Failed to execute 'setRemoteDescription'/)
+    await expect(initiatorPeerConnectionPromise).to.be.rejectedWith(/Failed to set remoteDescription/)
   })
 })
 

@@ -25,7 +25,12 @@ export const readCandidatesUntilConnected = async (connectedPromise: DeferredPro
       }
 
       log.trace('received new ICE candidate: %s', message.data)
-      await pc.addIceCandidate(new RTCIceCandidate(JSON.parse(message.data)))
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(JSON.parse(message.data)))
+      } catch (err) {
+        log.error('bad candidate received: ', err)
+        throw new Error('bad candidate received')
+      }
     } else {
       // connected promise resolved
       break
