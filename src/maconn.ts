@@ -34,17 +34,17 @@ export class WebRTCMultiaddrConnection implements MultiaddrConnection {
   /**
    * WebRTC Peer Connection
    */
-  readonly peerConnection: RTCPeerConnection;
+  readonly peerConnection: RTCPeerConnection
 
   /**
    * The multiaddr address used to communicate with the remote peer
    */
-  remoteAddr: Multiaddr;
+  remoteAddr: Multiaddr
 
   /**
    * Holds the lifecycle times of the connection
    */
-  timeline: MultiaddrConnectionTimeline;
+  timeline: MultiaddrConnectionTimeline
 
   /**
    * Optional metrics counter group for this connection
@@ -59,7 +59,7 @@ export class WebRTCMultiaddrConnection implements MultiaddrConnection {
   /**
    * The stream destination, a no-op as the transport natively supports multiplexing
    */
-  sink: Sink<Uint8Array, Promise<void>> = nopSink;
+  sink: Sink<Uint8Array, Promise<void>> = nopSink
 
   constructor (init: WebRTCMultiaddrConnectionInit) {
     this.remoteAddr = init.remoteAddr

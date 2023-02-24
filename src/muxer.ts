@@ -77,12 +77,12 @@ export class DataChannelMuxer implements StreamMuxer {
   /**
    * The stream source, a no-op as the transport natively supports multiplexing
    */
-  source: Source<Uint8Array> = nopSource;
+  source: Source<Uint8Array> = nopSource
 
   /**
    * The stream destination, a no-op as the transport natively supports multiplexing
    */
-  sink: Sink<Uint8Array, Promise<void>> = nopSink;
+  sink: Sink<Uint8Array, Promise<void>> = nopSink
 
   constructor (peerConnection: RTCPeerConnection, metrics?: CounterGroup, init?: StreamMuxerInit) {
     /**
@@ -119,13 +119,10 @@ export class DataChannelMuxer implements StreamMuxer {
       }
     }
   }
-
-  /**
-   * Initiate a new stream with the given name. If no name is
-   * provided, the id of the stream will be used.
-   */
-  newStream (name: string = ''): Stream {
-    const channel = this.peerConnection.createDataChannel(name)
+  
+  newStream (): Stream {
+    // The spec says the label SHOULD be an empty string: https://github.com/libp2p/specs/blob/master/webrtc/README.md#rtcdatachannel-label
+    const channel = this.peerConnection.createDataChannel('')
     const closeCb = (stream: WebRTCStream) => {
       this.metrics?.increment({ stream_end: true })
       this.init?.onStreamEnd?.(stream)

@@ -16,7 +16,7 @@ describe('Multiaddr Connection', () => {
       reset: () => {}
     })
     const maConn = new WebRTCMultiaddrConnection({
-      peerConnection: peerConnection,
+      peerConnection,
       remoteAddr,
       timeline: {
         open: (new Date()).getTime()
