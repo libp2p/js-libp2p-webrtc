@@ -119,11 +119,11 @@ export class DataChannelMuxer implements StreamMuxer {
       }
     }
   }
-  
+
   newStream (): Stream {
     // The spec says the label SHOULD be an empty string: https://github.com/libp2p/specs/blob/master/webrtc/README.md#rtcdatachannel-label
     const channel = this.peerConnection.createDataChannel('')
-    const closeCb = (stream: WebRTCStream) => {
+    const closeCb = (stream: WebRTCStream): void => {
       this.metrics?.increment({ stream_end: true })
       this.init?.onStreamEnd?.(stream)
     }
