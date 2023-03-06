@@ -17,9 +17,9 @@ const log = logger('libp2p:webrtc:peer')
 // will be changed to /webrtc-direct, /webrtc-direct/0.0.1, and 281
 // respectively once https://github.com/multiformats/js-multiaddr/pull/309
 // is merged.
-export const TRANSPORT = '/p2p-webrtc-direct'
+export const TRANSPORT = '/webrtc-w3c'
 export const PROTOCOL = '/webrtc-signaling/0.0.1'
-export const CODE = 276
+export const CODE = 281
 
 export interface WebRTCPeerTransportInit {
   rtcConfiguration?: RTCConfiguration
@@ -63,7 +63,7 @@ export class WebRTCDirectTransport implements Transport, Startable {
   }
 
   get [Symbol.toStringTag] (): string {
-    return '@libp2p/webrtc-direct'
+    return '@libp2p/webrtc-w3c'
   }
 
   get [symbol] (): true {

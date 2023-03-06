@@ -83,9 +83,7 @@ describe('webrtc-w3c dialer', () => {
   })
 })
 
-// TODO(ckousik): This test will fail until https://github.com/multiformats/js-multiaddr/pull/309
-// is merged.
-describe.skip('webrtc direct filter', () => {
+describe('webrtc-w3c filter', () => {
   it('can filter multiaddrs to dial', async () => {
     const transport = new WebRTCDirectTransport({
       transportManager: sinon.stub() as any,
@@ -96,7 +94,7 @@ describe.skip('webrtc direct filter', () => {
     }, {})
 
     const valid = [
-      multiaddr('/ip4/127.0.0.1/tcp/1234/ws/p2p-circuit/webrtc-direct')
+      multiaddr('/ip4/127.0.0.1/tcp/1234/ws/p2p-circuit/webrtc-w3c')
     ]
 
     expect(transport.filter(valid)).length(1)
