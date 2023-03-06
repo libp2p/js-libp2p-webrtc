@@ -49,39 +49,35 @@ export async function handleIncomingStream ({ rtcConfiguration, stream: rawStrea
         break
     }
   }
-  // we create the channel so that the peerconnection has a component for
-  // which to collect candidates
-  const channel = pc.createDataChannel('init')
-
-  // create and write an SDP offer
-  const offer = await pc.createOffer()
-  await pc.setLocalDescription(offer).catch(err => {
-    log.error('could not execute setLocalDescription', err)
-    throw new Error('Failed to set localDescription')
-  })
-
-  stream.write({ type: pb.Message.Type.SDP_OFFER, data: offer.sdp })
-
-  // read an SDP anwer
-  const pbAnswer = await stream.read()
-  if (pbAnswer.type !== pb.Message.Type.SDP_ANSWER) {
+  // read an SDP offer
+  const pbOffer = await stream.read()
+  if (pbOffer.type !== pb.Message.Type.SDP_OFFER) {
     // TODO: Find better way to print undefined without linter complaining
-    throw new Error(`expected message type SDP_ANSWER, received: ${pbAnswer.type ?? 'undefined'} `)
+    throw new Error(`expected message type SDP_OFFER, received: ${pbOffer.type ?? 'undefined'} `)
   }
-  const answer = new RTCSessionDescription({
-    type: 'answer',
-    sdp: pbAnswer.data
+  const offer = new RTCSessionDescription({
+    type: 'offer',
+    sdp: pbOffer.data
   })
 
-  await pc.setRemoteDescription(answer).catch(err => {
+  await pc.setRemoteDescription(offer).catch(err => {
     log.error('could not execute setRemoteDescription', err)
     throw new Error('Failed to set remoteDescription')
+  })
+
+  // create and write an SDP answer
+  const answer = await pc.createAnswer()
+  // write the answer to the remote
+  stream.write({ type: pb.Message.Type.SDP_ANSWER, data: answer.sdp })
+
+  await pc.setLocalDescription(answer).catch(err => {
+    log.error('could not execute setLocalDescription', err)
+    throw new Error('Failed to set localDescription')
   })
 
   // wait until candidates are connected
   await readCandidatesUntilConnected(connectedPromise, pc, stream)
   // close the dummy channel
-  channel.close()
   return [pc, muxerFactory]
 }
 
@@ -115,6 +111,9 @@ export async function connect ({ rtcConfiguration, signal, stream: rawStream }: 
 
   // reject the connectedPromise if the signal aborts
   signal.onabort = connectedPromise.reject
+  // we create the channel so that the peerconnection has a component for
+  // which to collect candidates
+  const channel = pc.createDataChannel('init')
   // setup callback to write ICE candidates to the remote
   // peer
   pc.onicecandidate = ({ candidate }) => {
@@ -123,30 +122,30 @@ export async function connect ({ rtcConfiguration, signal, stream: rawStream }: 
       data: (candidate != null) ? JSON.stringify(candidate.toJSON()) : ''
     })
   }
-
-  // read offer
-  const offerMessage = await stream.read()
-  if (offerMessage.type !== pb.Message.Type.SDP_OFFER) {
-    throw new Error('remote should send an SDP offer')
-  }
-
-  const offerSdp = new RTCSessionDescription({ type: 'offer', sdp: offerMessage.data })
-  await pc.setRemoteDescription(offerSdp).catch(err => {
-    log.error('could not execute setRemoteDescription', err)
-    throw new Error('Failed to set remoteDescription')
-  })
-
-  // create an answer
-  const answerSdp = await pc.createAnswer()
-  // write the answer to the stream
-  stream.write({ type: pb.Message.Type.SDP_ANSWER, data: answerSdp.sdp })
-  // set answer as local description
-  await pc.setLocalDescription(answerSdp).catch(err => {
+  // create an offer
+  const offerSdp = await pc.createOffer()
+  // write the offer to the stream
+  stream.write({ type: pb.Message.Type.SDP_OFFER, data: offerSdp.sdp })
+  // set offer as local description
+  await pc.setLocalDescription(offerSdp).catch(err => {
     log.error('could not execute setLocalDescription', err)
     throw new Error('Failed to set localDescription')
   })
 
+  // read answer
+  const answerMessage = await stream.read()
+  if (answerMessage.type !== pb.Message.Type.SDP_ANSWER) {
+    throw new Error('remote should send an SDP answer')
+  }
+
+  const answerSdp = new RTCSessionDescription({ type: 'answer', sdp: answerMessage.data })
+  await pc.setRemoteDescription(answerSdp).catch(err => {
+    log.error('could not execute setRemoteDescription', err)
+    throw new Error('Failed to set remoteDescription')
+  })
+
   await readCandidatesUntilConnected(connectedPromise, pc, stream)
+  channel.close()
   return [pc, muxerFactory]
 }
 export { }
