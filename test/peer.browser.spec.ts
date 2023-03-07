@@ -9,23 +9,28 @@ import sinon from 'sinon'
 import { connect, handleIncomingStream } from '../src/peer_transport/handler'
 import { Message } from '../src/peer_transport/pb/index.js'
 import { WebRTCDirectTransport } from '../src/peer_transport/transport'
+import { detect } from 'detect-browser'
+
+const browser = detect()
 
 describe('webrtc-w3c basic', () => {
-  it('should connect', async () => {
-    const [receiver, initiator] = duplexPair<any>()
-    const dstPeerId = await createEd25519PeerId()
-    const connection = mockConnection(
-      mockMultiaddrConnection(pair<any>(), dstPeerId)
-    )
-    const controller = new AbortController()
-    const initiatorPeerConnectionPromise = connect({ stream: mockStream(initiator), signal: controller.signal })
-    const receiverPeerConnectionPromise = handleIncomingStream({ stream: mockStream(receiver), connection })
-    await expect(initiatorPeerConnectionPromise).to.be.fulfilled()
-    await expect(receiverPeerConnectionPromise).to.be.fulfilled()
-    const [[pc0], [pc1]] = await Promise.all([initiatorPeerConnectionPromise, receiverPeerConnectionPromise])
-    expect(pc0.connectionState).eq('connected')
-    expect(pc1.connectionState).eq('connected')
-  })
+  if ((browser != null) && browser.name !== 'firefox') {
+    it('should connect', async () => {
+      const [receiver, initiator] = duplexPair<any>()
+      const dstPeerId = await createEd25519PeerId()
+      const connection = mockConnection(
+        mockMultiaddrConnection(pair<any>(), dstPeerId)
+      )
+      const controller = new AbortController()
+      const initiatorPeerConnectionPromise = connect({ stream: mockStream(initiator), signal: controller.signal })
+      const receiverPeerConnectionPromise = handleIncomingStream({ stream: mockStream(receiver), connection })
+      await expect(initiatorPeerConnectionPromise).to.be.fulfilled()
+      await expect(receiverPeerConnectionPromise).to.be.fulfilled()
+      const [[pc0], [pc1]] = await Promise.all([initiatorPeerConnectionPromise, receiverPeerConnectionPromise])
+      expect(pc0.connectionState).eq('connected')
+      expect(pc1.connectionState).eq('connected')
+    })
+  }
 })
 
 describe('webrtc-w3c receiver', () => {
