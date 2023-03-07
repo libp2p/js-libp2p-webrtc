@@ -13,6 +13,9 @@ import { noise } from "@chainsafe/libp2p-noise"
 let outgoing_stream
 let webrtcDirectAddress
 
+const CIRCUIT_RELAY_CODE = 290
+const WEBRTC_W3C_CODE = 281
+
 const output = document.getElementById("output")
 const sendSection = document.getElementById("send-section")
 const peer = document.getElementById("peer")
@@ -45,6 +48,7 @@ await node.start()
 
 // handle the echo protocol
 await node.handle("/echo/1.0.0", ({ stream }) => {
+  console.log("incoming stream")
   pipe(
     stream,
     async function* (source) {
@@ -66,9 +70,9 @@ node.peerStore.addEventListener("change:multiaddrs", (event) => {
   }
 
   node.getMultiaddrs().forEach((ma) => {
-    if (ma.protoCodes().includes(290)) {
+    if (ma.protoCodes().includes(CIRCUIT_RELAY_CODE)) {
       const newWebrtcDirectAddress = ma.encapsulate(
-        multiaddr(`/p2p-webrtc-direct/p2p/${node.peerId}`)
+        multiaddr(`/webrtc-w3c/p2p/${node.peerId}`)
       )
 
       // only update if the address is new
@@ -82,15 +86,16 @@ node.peerStore.addEventListener("change:multiaddrs", (event) => {
   })
 })
 
-const CIRCUIT_RELAY_CODE = 276
-const isCircuitRelayMultiaddr = (ma) => ma.protoCodes().includes(CIRCUIT_RELAY_CODE)
+const isWebrtcW3C = (ma) => {
+  return ma.protoCodes().includes(WEBRTC_W3C_CODE)
+}
 
 window.connect.onclick = async () => {
   const ma = multiaddr(window.peer.value)
   appendOutput(`Dialing '${ma}'`)
   const connection = await node.dial(ma)
 
-  if (!isCircuitRelayMultiaddr(ma)) {
+  if (!isWebrtcW3C(ma)) {
     return
   }
 
