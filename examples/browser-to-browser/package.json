@@ -8,7 +8,9 @@
     "build": "vite build",
     "go-relay": "cd ../go-libp2p-server && go run ./relay",
     "node-relay": "node relay.js",
-    "test": "npm run build && playwright test tests"
+    "test:firefox": "npm run build && playwright test --browser=firefox tests",
+    "test:chrome": "npm run build && playwright test tests",
+    "test": "npm run test:firefox && npm run test:chrome"
   },
   "dependencies": {
     "@chainsafe/libp2p-noise": "^11.0.0",

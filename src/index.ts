@@ -7,6 +7,6 @@ export function webRTC (): (components: WebRTCTransportComponents) => Transport 
   return (components: WebRTCTransportComponents) => new WebRTCTransport(components)
 }
 
-export function webRTCDirect (init: WebRTCPeerTransportInit): (components: WebRTCDirectTransportComponents) => Transport {
-  return (components: WebRTCDirectTransportComponents) => new WebRTCDirectTransport(components, init)
+export function webRTCDirect (init?: WebRTCPeerTransportInit): (components: WebRTCDirectTransportComponents) => Transport {
+  return (components: WebRTCDirectTransportComponents) => new WebRTCDirectTransport(components, init ?? {})
 }
