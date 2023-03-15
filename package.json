@@ -162,6 +162,8 @@
     "@libp2p/peer-id-factory": "^1.0.19",
     "@protobuf-ts/protoc": "^2.8.0",
     "@types/uuid": "^8.3.4",
-    "aegir": "^37.6.6"
+    "aegir": "^38.1.6",
+    "sinon": "^15.0.2",
+    "sinon-ts": "^1.0.0"
   }
 }
