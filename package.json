@@ -163,7 +163,7 @@
     "@protobuf-ts/plugin": "^2.8.0",
     "@protobuf-ts/protoc": "^2.8.0",
     "@types/uuid": "^8.3.4",
-    "aegir": "^37.6.6",
+    "aegir": "^38.1.7",
     "it-first": "^2.0.0",
     "libp2p": "^0.40.0"
   }
