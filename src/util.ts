@@ -2,4 +2,4 @@ export const nopSource = {
   async * [Symbol.asyncIterator] () {}
 }
 
-export const nopSink = async (_: any) => {}
+export const nopSink = async (_: any): Promise<void> => {}

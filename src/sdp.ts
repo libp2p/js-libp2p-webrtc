@@ -48,7 +48,9 @@ export function certhash (ma: Multiaddr): string {
 /**
  * Convert a certhash into a multihash
  */
-export function decodeCerthash (certhash: string) {
+export interface MultiHash { code: multihashes.HashCode, name: multihashes.HashName, length: number, digest: Uint8Array }
+
+export function decodeCerthash (certhash: string): MultiHash {
   const mbdecoded = mbdecoder.decode(certhash)
   return multihashes.decode(mbdecoded)
 }
