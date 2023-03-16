@@ -158,11 +158,12 @@
     "uint8arrays": "^4.0.2"
   },
   "devDependencies": {
-    "@libp2p/interface-mocks": "^8.0.1",
-    "@libp2p/peer-id-factory": "^1.0.19",
-    "@protobuf-ts/protoc": "^2.8.0",
-    "@types/uuid": "^8.3.4",
-    "aegir": "^38.1.6",
+    "@libp2p/interface-mocks": "^9.2.1",
+    "@libp2p/peer-id-factory": "^2.0.2",
+    "@protobuf-ts/plugin": "^2.8.2",
+    "@protobuf-ts/protoc": "^2.8.2",
+    "@types/uuid": "^9.0.1",
+    "aegir": "^38.1.7",
     "sinon": "^15.0.2",
     "sinon-ts": "^1.0.0"
   }
