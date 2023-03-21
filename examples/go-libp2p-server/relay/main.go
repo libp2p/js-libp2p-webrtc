@@ -10,16 +10,16 @@ import (
 
 	// "github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/muxer/mplex"
-	relay "github.com/libp2p/go-libp2p/p2p/protocol/circuitv1/relay"
+	relay "github.com/libp2p/go-libp2p/p2p/protocol/circuitv2/relay"
 	ma "github.com/multiformats/go-multiaddr"
 )
 
 func main() {
-	makeRelayV1()
+	makeRelayV2()
 	select {}
 }
 
-func makeRelayV1() host.Host {
+func makeRelayV2() host.Host {
 	r := rand.Reader
 	// Generate a key pair for this host. We will use it at least
 	// to obtain a valid host ID.
@@ -43,7 +43,7 @@ func makeRelayV1() host.Host {
 		panic(err)
 	}
 
-	_, err = relay.NewRelay(host)
+	_, err = relay.New(host)
 	if err != nil {
 		panic(err)
 	}

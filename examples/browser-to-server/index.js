@@ -20,6 +20,7 @@ const sender = pushable()
 const node = await createLibp2p({
   transports: [webRTC()],
   connectionEncryption: [noise()],
+  relay: null,
 });
 
 await node.start()

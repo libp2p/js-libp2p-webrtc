@@ -13,11 +13,7 @@ import { connect, handleIncomingStream } from './handler.js'
 
 const log = logger('libp2p:webrtc:peer')
 
-// TODO(ckousik): This is the wrong protocol name and code. They
-// will be changed to /webrtc-direct, /webrtc-direct/0.0.1, and 281
-// respectively once https://github.com/multiformats/js-multiaddr/pull/309
-// is merged.
-export const TRANSPORT = '/webrtc-w3c'
+export const TRANSPORT = '/webrtc'
 export const PROTOCOL = '/webrtc-signaling/0.0.1'
 export const CODE = 281
 
@@ -63,7 +59,7 @@ export class WebRTCDirectTransport implements Transport, Startable {
   }
 
   get [Symbol.toStringTag] (): string {
-    return '@libp2p/webrtc-w3c'
+    return '@libp2p/webrtc'
   }
 
   get [symbol] (): true {
@@ -80,9 +76,9 @@ export class WebRTCDirectTransport implements Transport, Startable {
   /*
    * dial connects to a remote via the circuit relay or any other protocol
    * and proceeds to upgrade to a webrtc connection.
-   * multiaddr of the form: <multiaddr>/webrtc-direct/p2p/<destination-peer>
+   * multiaddr of the form: <multiaddr>/webrtc/p2p/<destination-peer>
    * For a circuit relay, this will be of the form
-   * <relay address>/p2p/<relay-peer>/p2p-circuit/webrtc-direct/p2p/<destination-peer>
+   * <relay address>/p2p/<relay-peer>/p2p-circuit/webrtc/p2p/<destination-peer>
   */
   async dial (ma: Multiaddr, options: DialOptions): Promise<Connection> {
     log.trace('dialing address: ', ma)

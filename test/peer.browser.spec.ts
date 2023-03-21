@@ -13,7 +13,7 @@ import { detect } from 'detect-browser'
 
 const browser = detect()
 
-describe('webrtc-w3c basic', () => {
+describe('webrtc basic', () => {
   const runner: any = ((browser != null) && browser.name !== 'firefox') ? it : it.skip
   runner('should connect', async () => {
     const [receiver, initiator] = duplexPair<any>()
@@ -32,7 +32,7 @@ describe('webrtc-w3c basic', () => {
   })
 })
 
-describe('webrtc-w3c receiver', () => {
+describe('webrtc receiver', () => {
   it('should fail receiving on invalid sdp offer', async () => {
     const [receiver, initiator] = duplexPair<any>()
     const dstPeerId = await createEd25519PeerId()
@@ -47,7 +47,7 @@ describe('webrtc-w3c receiver', () => {
   })
 })
 
-describe('webrtc-w3c dialer', () => {
+describe('webrtc dialer', () => {
   it('should fail receiving on invalid sdp answer', async () => {
     const [receiver, initiator] = duplexPair<any>()
     const controller = new AbortController()
@@ -87,7 +87,7 @@ describe('webrtc-w3c dialer', () => {
   })
 })
 
-describe('webrtc-w3c filter', () => {
+describe('webrtc filter', () => {
   it('can filter multiaddrs to dial', async () => {
     const transport = new WebRTCDirectTransport({
       transportManager: sinon.stub() as any,
@@ -98,7 +98,7 @@ describe('webrtc-w3c filter', () => {
     }, {})
 
     const valid = [
-      multiaddr('/ip4/127.0.0.1/tcp/1234/ws/p2p-circuit/webrtc-w3c')
+      multiaddr('/ip4/127.0.0.1/tcp/1234/ws/p2p-circuit/webrtc')
     ]
 
     expect(transport.filter(valid)).length(1)

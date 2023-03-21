@@ -5,7 +5,4 @@ export default {
   optimizeDeps: {
     esbuildOptions: { target: 'es2022', supported: { bigint: true } }
   },
-  server: {
-    open: true
-  }
 }

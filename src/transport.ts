@@ -82,7 +82,7 @@ export class WebRTCTransport implements Transport {
    * Implement toString() for WebRTCTransport
    */
   get [Symbol.toStringTag] (): string {
-    return '@libp2p/webrtc'
+    return '@libp2p/webrtc-direct'
   }
 
   /**

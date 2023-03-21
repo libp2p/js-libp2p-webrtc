@@ -7,6 +7,7 @@ import * as filters from "@libp2p/websockets/filters"
 import { pushable } from "it-pushable"
 import { mplex } from "@libp2p/mplex"
 import { createLibp2p } from "libp2p"
+import { circuitRelayTransport } from 'libp2p/circuit-relay'
 import { noise } from "@chainsafe/libp2p-noise"
 
 // singletons
@@ -14,7 +15,7 @@ let outgoing_stream
 let webrtcDirectAddress
 
 const CIRCUIT_RELAY_CODE = 290
-const WEBRTC_W3C_CODE = 281
+const WEBRTC_CODE = 281
 
 const output = document.getElementById("output")
 const sendSection = document.getElementById("send-section")
@@ -33,15 +34,12 @@ const node = await createLibp2p({
       filter: filters.all,
     }),
     webRTCDirect({}),
+    circuitRelayTransport({
+      discoverRelays: 1,
+    }),
   ],
   connectionEncryption: [noise()],
   streamMuxers: [mplex()],
-  relay: {
-    enabled: true,
-    autoRelay: {
-      enabled: true,
-    },
-  },
 })
 
 await node.start()
@@ -71,13 +69,13 @@ node.peerStore.addEventListener("change:multiaddrs", (event) => {
 
   node.getMultiaddrs().forEach((ma) => {
     if (ma.protoCodes().includes(CIRCUIT_RELAY_CODE)) {
-      const newWebrtcDirectAddress = ma.encapsulate(
-        multiaddr(`/webrtc-w3c/p2p/${node.peerId}`)
-      )
+      const newWebrtcDirectAddress = multiaddr(ma.toString() + '/webrtc/p2p/' + node.peerId)
+
+      const webrtcAddrString = newWebrtcDirectAddress.toString()
 
       // only update if the address is new
       if (newWebrtcDirectAddress?.toString() !== webrtcDirectAddress?.toString()) {
-        appendOutput(`Listening on '${newWebrtcDirectAddress}'`)
+        appendOutput(`Listening on '${webrtcAddrString}'`)
         sendSection.style.display = "block"
         webrtcDirectAddress = newWebrtcDirectAddress
         connected_peer.innerText = webrtcDirectAddress
@@ -86,8 +84,8 @@ node.peerStore.addEventListener("change:multiaddrs", (event) => {
   })
 })
 
-const isWebrtcW3C = (ma) => {
-  return ma.protoCodes().includes(WEBRTC_W3C_CODE)
+const isWebrtc = (ma) => {
+  return ma.protoCodes().includes(WEBRTC_CODE)
 }
 
 window.connect.onclick = async () => {
@@ -95,7 +93,7 @@ window.connect.onclick = async () => {
   appendOutput(`Dialing '${ma}'`)
   const connection = await node.dial(ma)
 
-  if (!isWebrtcW3C(ma)) {
+  if (!isWebrtc(ma)) {
     return
   }
 

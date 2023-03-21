@@ -50,7 +50,7 @@ describe('WebRTC Transport', () => {
   it('toString property getter', () => {
     const t = new underTest.WebRTCTransport(components)
     const s = t[Symbol.toStringTag]
-    expect(s).to.equal('@libp2p/webrtc')
+    expect(s).to.equal('@libp2p/webrtc-direct')
   })
 
   it('symbol property getter', () => {
@@ -62,20 +62,19 @@ describe('WebRTC Transport', () => {
   it('transport filter filters out invalid multiaddrs', async () => {
     const mas: Multiaddr[] = [
       '/ip4/1.2.3.4/udp/1234/webrtc/certhash/uEiAUqV7kzvM1wI5DYDc1RbcekYVmXli_Qprlw3IkiEg6tQ',
-      '/ip4/1.2.3.4/udp/1234/webrtc/certhash/uEiAUqV7kzvM1wI5DYDc1RbcekYVmXli_Qprlw3IkiEg6tQ/p2p/12D3KooWGDMwwqrpcYKpKCgxuKT2NfqPqa94QnkoBBpqvCaiCzWd',
-      '/ip4/1.2.3.4/udp/1234/webrtc/p2p/12D3KooWGDMwwqrpcYKpKCgxuKT2NfqPqa94QnkoBBpqvCaiCzWd',
+      '/ip4/1.2.3.4/udp/1234/webrtc-direct/certhash/uEiAUqV7kzvM1wI5DYDc1RbcekYVmXli_Qprlw3IkiEg6tQ/p2p/12D3KooWGDMwwqrpcYKpKCgxuKT2NfqPqa94QnkoBBpqvCaiCzWd',
+      '/ip4/1.2.3.4/udp/1234/webrtc-direct/p2p/12D3KooWGDMwwqrpcYKpKCgxuKT2NfqPqa94QnkoBBpqvCaiCzWd',
       '/ip4/1.2.3.4/udp/1234/certhash/uEiAUqV7kzvM1wI5DYDc1RbcekYVmXli_Qprlw3IkiEg6tQ/p2p/12D3KooWGDMwwqrpcYKpKCgxuKT2NfqPqa94QnkoBBpqvCaiCzWd'
     ].map((s) => multiaddr(s))
     const t = new underTest.WebRTCTransport(components)
     const result = t.filter(mas)
-    const expected: Multiaddr[] = [
-      multiaddr('/ip4/1.2.3.4/udp/1234/webrtc/certhash/uEiAUqV7kzvM1wI5DYDc1RbcekYVmXli_Qprlw3IkiEg6tQ/p2p/12D3KooWGDMwwqrpcYKpKCgxuKT2NfqPqa94QnkoBBpqvCaiCzWd')
-    ]
+    const expected =
+      multiaddr('/ip4/1.2.3.4/udp/1234/webrtc-direct/certhash/uEiAUqV7kzvM1wI5DYDc1RbcekYVmXli_Qprlw3IkiEg6tQ/p2p/12D3KooWGDMwwqrpcYKpKCgxuKT2NfqPqa94QnkoBBpqvCaiCzWd')
 
     assert.isNotNull(result)
     expect(result.constructor.name).to.equal('Array')
-    expect(expected.constructor.name).to.equal('Array')
-    expect(result).to.eql(expected)
+    expect(result).to.have.length(1)
+    expect(result[0].equals(expected)).to.be.true()
   })
 
   it('throws WebRTC transport error when dialing a multiaddr without a PeerId', async () => {
