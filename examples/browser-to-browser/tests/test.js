@@ -1,8 +1,12 @@
 /* eslint-disable no-console */
 import { test, expect } from '@playwright/test'
 import { playwright } from 'test-util-ipfs-example'
-import { spawn, exec } from 'child_process'
-import { existsSync } from 'fs'
+import { createLibp2p } from 'libp2p'
+import { circuitRelayServer } from 'libp2p/circuit-relay'
+import { webSockets } from '@libp2p/websockets'
+import * as filters from '@libp2p/websockets/filters'
+import { mplex } from '@libp2p/mplex'
+import { noise } from '@chainsafe/libp2p-noise'
 
 // Setup
 const play = test.extend({
@@ -21,33 +25,24 @@ const output = '#output'
 const message = 'hello'
 let url
 
-async function spawnGoLibp2p() {
-  if (!existsSync('../../examples/go-libp2p-server/go-libp2p-server/relay')) {
-    await new Promise((resolve, reject) => {
-      exec('go build',
-        { cwd: '../../examples/go-libp2p-server/relay' },
-        (error, stdout, stderr) => {
-          if (error) {
-            throw (`exec error: ${error}`)
-          }
-          resolve()
-        })
-    })
-  }
-
-  const server = spawn('./relay', [], { cwd: '../../examples/go-libp2p-server/relay', killSignal: 'SIGINT' })
-  server.stderr.on('data', (data) => {
-    console.log(`stderr: ${data}`, typeof data)
+// we spawn a js libp2p relay
+async function spawnRelay() {
+  const server = await createLibp2p({
+    addresses: {
+      listen: ['/ip4/127.0.0.1/tcp/0/ws']
+    },
+    transports: [
+      webSockets({
+        filter: filters.all
+      }),
+    ],
+    connectionEncryption: [noise()],
+    streamMuxers: [mplex()],
+    relay: circuitRelayServer({}),
   })
-  const serverAddr = await (new Promise(resolve => {
-    server.stdout.on('data', (data) => {
-      console.log(`stdout: ${data}`, typeof data)
-      const addr = String(data).match(/p2p addr:  ([^\s]*)/)
-      if (addr !== null && addr.length > 0) {
-        resolve(addr[1])
-      }        
-    })
-  }))
+
+  const serverAddr = server.getMultiaddrs()[0].toString()
+
   return { server, serverAddr }
 }
 
@@ -58,7 +53,7 @@ play.describe('browser to browser example:', () => {
   // eslint-disable-next-line no-empty-pattern
   play.beforeAll(async ({ servers }, testInfo) => {
     testInfo.setTimeout(5 * 60_000)
-    const s = await spawnGoLibp2p()
+    const s = await spawnRelay()
     server = s.server
     serverAddr = s.serverAddr
     console.log('Server addr:', serverAddr)
@@ -66,14 +61,14 @@ play.describe('browser to browser example:', () => {
   }, {})
 
   play.afterAll(() => {
-    server.kill('SIGINT')
+    server.stop()
   })
 
   play.beforeEach(async ({ page }) => {
     await page.goto(url)
   })
 
-  play('should connect to a go-libp2p relay node', async ({ page, context }) => {
+  play('should connect to a relay node', async ({ page, context }) => {
     let peer = await per_page(page, serverAddr)
 
     // load second page and use `peer` as the connectAddr
