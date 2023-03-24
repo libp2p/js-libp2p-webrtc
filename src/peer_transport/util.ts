@@ -1,6 +1,10 @@
 import { logger } from '@libp2p/logger'
 import type { DeferredPromise } from 'p-defer'
 import * as pb from './pb/index.js'
+import { detect } from 'detect-browser'
+
+const browser = detect()
+const isFirefox = ((browser != null) && browser.name === 'firefox')
 
 interface MessageStream {
   read: () => Promise<pb.Message>
@@ -38,4 +42,39 @@ export const readCandidatesUntilConnected = async (connectedPromise: DeferredPro
   }
   await connectedPromise.promise
 }
-export {}
+
+export function resolveOnConnected (pc: RTCPeerConnection, promise: DeferredPromise<any>): void {
+  if (!isFirefox) {
+    pc.onconnectionstatechange = (_) => {
+      log.trace('receiver peerConnectionState state: ', pc.connectionState)
+      switch (pc.connectionState) {
+        case 'connected':
+          promise.resolve()
+          break
+        case 'failed':
+        case 'disconnected':
+        case 'closed':
+          promise.reject()
+          break
+        default:
+          break
+      }
+    }
+  } else {
+    pc.oniceconnectionstatechange = (_) => {
+      switch (pc.iceConnectionState) {
+        case 'connected':
+          promise.resolve()
+          break
+        case 'failed':
+        case 'disconnected':
+        case 'closed':
+          promise.reject()
+          break
+        default:
+          break
+      }
+    }
+  }
+}
+export { }

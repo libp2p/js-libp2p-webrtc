@@ -1,7 +1,7 @@
 import { multiaddr } from "@multiformats/multiaddr"
 import { pipe } from "it-pipe"
 import { fromString, toString } from "uint8arrays"
-import { webRTCDirect } from "js-libp2p-webrtc"
+import { webRTC } from "js-libp2p-webrtc"
 import { webSockets } from "@libp2p/websockets"
 import * as filters from "@libp2p/websockets/filters"
 import { pushable } from "it-pushable"
@@ -33,7 +33,7 @@ const node = await createLibp2p({
     webSockets({
       filter: filters.all,
     }),
-    webRTCDirect({}),
+    webRTC({}),
     circuitRelayTransport({
       discoverRelays: 1,
     }),

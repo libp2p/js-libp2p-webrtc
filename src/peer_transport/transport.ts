@@ -1,7 +1,7 @@
 import type { Connection } from '@libp2p/interface-connection'
 import { CreateListenerOptions, DialOptions, Listener, symbol, Transport } from '@libp2p/interface-transport'
 import type { ConnectionHandler, TransportManager, Upgrader } from '@libp2p/interface-transport'
-import { multiaddr, Multiaddr } from '@multiformats/multiaddr'
+import { multiaddr, Multiaddr, protocols } from '@multiformats/multiaddr'
 import type { IncomingStreamData, Registrar } from '@libp2p/interface-registrar'
 import type { PeerId } from '@libp2p/interface-peer-id'
 import { WebRTCMultiaddrConnection } from '../maconn.js'
@@ -15,13 +15,13 @@ const log = logger('libp2p:webrtc:peer')
 
 export const TRANSPORT = '/webrtc'
 export const PROTOCOL = '/webrtc-signaling/0.0.1'
-export const CODE = 281
+export const CODE = protocols('webrtc').code
 
-export interface WebRTCPeerTransportInit {
+export interface WebRTCTransportInit {
   rtcConfiguration?: RTCConfiguration
 }
 
-export interface WebRTCDirectTransportComponents {
+export interface WebRTCTransportComponents {
   peerId: PeerId
   registrar: Registrar
   upgrader: Upgrader
@@ -29,13 +29,13 @@ export interface WebRTCDirectTransportComponents {
   peerStore: PeerStore
 }
 
-export class WebRTCDirectTransport implements Transport, Startable {
+export class WebRTCTransport implements Transport, Startable {
   private _started = false
   private readonly handler?: ConnectionHandler
 
   constructor (
-    private readonly components: WebRTCDirectTransportComponents,
-    private readonly init: WebRTCPeerTransportInit
+    private readonly components: WebRTCTransportComponents,
+    private readonly init: WebRTCTransportInit
   ) {
     this._onProtocol = this._onProtocol.bind(this)
   }

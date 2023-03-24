@@ -15,6 +15,7 @@ import type { WebRTCDialOptions } from './options.js'
 import * as sdp from './sdp.js'
 import { WebRTCStream } from './stream.js'
 import { genUfrag } from './util.js'
+import { protocols } from '@multiformats/multiaddr'
 
 const log = logger('libp2p:webrtc:transport')
 
@@ -28,30 +29,30 @@ const HANDSHAKE_TIMEOUT_MS = 10_000
  *
  * {@link https://github.com/multiformats/multiaddr/blob/master/protocols.csv}
  */
-export const WEBRTC_CODE: number = 280
+export const WEBRTC_CODE: number = protocols('webrtc-direct').code
 
 /**
  * Created by converting the hexadecimal protocol code to an integer.
  *
  * {@link https://github.com/multiformats/multiaddr/blob/master/protocols.csv}
  */
-export const CERTHASH_CODE: number = 466
+export const CERTHASH_CODE: number = protocols('certhash').code
 
 /**
  * The peer for this transport
  */
 // @TODO(ddimaria): seems like an unnessary abstraction, consider removing
-export interface WebRTCTransportComponents {
+export interface WebRTCDirectTransportComponents {
   peerId: PeerId
 }
 
-export class WebRTCTransport implements Transport {
+export class WebRTCDirectTransport implements Transport {
   /**
    * The peer for this transport
    */
-  private readonly components: WebRTCTransportComponents
+  private readonly components: WebRTCDirectTransportComponents
 
-  constructor (components: WebRTCTransportComponents) {
+  constructor (components: WebRTCDirectTransportComponents) {
     this.components = components
   }
 

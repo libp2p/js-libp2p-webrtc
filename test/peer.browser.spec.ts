@@ -8,14 +8,14 @@ import { pbStream } from 'it-pb-stream'
 import sinon from 'sinon'
 import { connect, handleIncomingStream } from '../src/peer_transport/handler'
 import { Message } from '../src/peer_transport/pb/index.js'
-import { WebRTCDirectTransport } from '../src/peer_transport/transport'
+import { WebRTCTransport } from '../src/peer_transport/transport'
 import { detect } from 'detect-browser'
 
 const browser = detect()
 
 describe('webrtc basic', () => {
-  const runner: any = ((browser != null) && browser.name !== 'firefox') ? it : it.skip
-  runner('should connect', async () => {
+  const isFirefox = ((browser != null) && browser.name === 'firefox')
+  it('should connect', async () => {
     const [receiver, initiator] = duplexPair<any>()
     const dstPeerId = await createEd25519PeerId()
     const connection = mockConnection(
@@ -27,6 +27,11 @@ describe('webrtc basic', () => {
     await expect(initiatorPeerConnectionPromise).to.be.fulfilled()
     await expect(receiverPeerConnectionPromise).to.be.fulfilled()
     const [[pc0], [pc1]] = await Promise.all([initiatorPeerConnectionPromise, receiverPeerConnectionPromise])
+    if (isFirefox) {
+      expect(pc0.iceConnectionState).eq('connected')
+      expect(pc1.iceConnectionState).eq('connected')
+      return
+    }
     expect(pc0.connectionState).eq('connected')
     expect(pc1.connectionState).eq('connected')
   })
@@ -89,7 +94,7 @@ describe('webrtc dialer', () => {
 
 describe('webrtc filter', () => {
   it('can filter multiaddrs to dial', async () => {
-    const transport = new WebRTCDirectTransport({
+    const transport = new WebRTCTransport({
       transportManager: sinon.stub() as any,
       peerId: sinon.stub() as any,
       registrar: mockRegistrar(),

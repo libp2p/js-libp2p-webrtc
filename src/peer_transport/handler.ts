@@ -2,7 +2,7 @@ import type { IncomingStreamData } from '@libp2p/interface-registrar'
 import { pbStream } from 'it-pb-stream'
 import pDefer, { type DeferredPromise } from 'p-defer'
 import { TimeoutController } from 'timeout-abort-controller'
-import { readCandidatesUntilConnected } from './util.js'
+import { readCandidatesUntilConnected, resolveOnConnected } from './util.js'
 import * as pb from './pb/index.js'
 import { abortableDuplex } from 'abortable-iterator'
 import { logger } from '@libp2p/logger'
@@ -33,22 +33,8 @@ export async function handleIncomingStream ({ rtcConfiguration, stream: rawStrea
     })
   }
 
-  // setup callback for peerconnection state change
-  pc.onconnectionstatechange = (_) => {
-    log.trace('receiver peerConnectionState state: ', pc.connectionState)
-    switch (pc.connectionState) {
-      case 'connected':
-        connectedPromise.resolve()
-        break
-      case 'failed':
-      case 'disconnected':
-      case 'closed':
-        connectedPromise.reject()
-        break
-      default:
-        break
-    }
-  }
+  resolveOnConnected(pc, connectedPromise)
+
   // read an SDP offer
   const pbOffer = await stream.read()
   if (pbOffer.type !== pb.Message.Type.SDP_OFFER) {
@@ -97,17 +83,7 @@ export async function connect ({ rtcConfiguration, signal, stream: rawStream }: 
   // useful for debugging
 
   const connectedPromise = pDefer()
-  pc.onconnectionstatechange = (_) => {
-    switch (pc.connectionState) {
-      case 'connected':
-      { connectedPromise.resolve(); return }
-      case 'closed':
-      case 'disconnected':
-      case 'failed':
-      { connectedPromise.reject(); break }
-      default:
-    }
-  }
+  resolveOnConnected(pc, connectedPromise)
 
   // reject the connectedPromise if the signal aborts
   signal.onabort = connectedPromise.reject
