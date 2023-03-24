@@ -4,16 +4,10 @@ This example leverages the [vite bundler](https://vitejs.dev/) to compile and se
 
 ## Running the Relay Server
 
-For browsers to communicate, we first need to run the Go LibP2P relay server:
+For browsers to communicate, we first need to run the LibP2P relay server:
 
 ```shell
-npm run go-relay
-```
-
-Alternatively, a NodeJS relay server is available:
-
-```shell
-npm run node-relay
+npm run relay
 ```
 
 Copy one of the multiaddresses in the output.

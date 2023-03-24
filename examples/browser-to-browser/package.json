@@ -6,8 +6,7 @@
   "scripts": {
     "start": "vite",
     "build": "vite build",
-    "go-relay": "cd ../go-libp2p-server && go run ./relay",
-    "node-relay": "node relay.js",
+    "relay": "node relay.js",
     "test:firefox": "npm run build && playwright test --browser=firefox tests",
     "test:chrome": "npm run build && playwright test tests",
     "test": "npm run test:firefox && npm run test:chrome"

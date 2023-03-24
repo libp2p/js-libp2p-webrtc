@@ -30,7 +30,7 @@ export interface WebRTCDirectTransportComponents {
 }
 
 export class WebRTCDirectTransport implements Transport, Startable {
-  private readonly _started = false
+  private _started = false
   private readonly handler?: ConnectionHandler
 
   constructor (
@@ -48,10 +48,12 @@ export class WebRTCDirectTransport implements Transport, Startable {
     await this.components.registrar.handle(PROTOCOL, (data) => {
       this._onProtocol(data).catch(err => { log.error('failed to handle incoming connect from %p', data.connection.remotePeer, err) })
     })
+    this._started = true
   }
 
   async stop (): Promise<void> {
     await this.components.registrar.unhandle(PROTOCOL)
+    this._started = false
   }
 
   createListener (options: CreateListenerOptions): Listener {
