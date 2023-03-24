@@ -79,7 +79,7 @@ play.describe('browser to browser example:', () => {
     await page.fill(connectAddr, newPeer)
     await page.click(connectBtn)
 
-    // send the relay message to the go libp2p server
+    // send the relay message to the peer over the relay
     await page.fill(messageInput, message)
     await page.click(sendBtn)
 
