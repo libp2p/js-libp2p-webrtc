@@ -1,7 +1,7 @@
 {
-  "name": "js-libp2p-webrtc-browser-to-server",
+  "name": "js-libp2p-webrtc-private-to-private",
   "version": "1.0.0",
-  "description": "Connect a browser to a server",
+  "description": "Connect a browser to another browser",
   "type": "module",
   "scripts": {
     "start": "vite",

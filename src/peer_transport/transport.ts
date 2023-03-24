@@ -1,6 +1,6 @@
 import type { Connection } from '@libp2p/interface-connection'
 import { CreateListenerOptions, DialOptions, Listener, symbol, Transport } from '@libp2p/interface-transport'
-import type { ConnectionHandler, TransportManager, Upgrader } from '@libp2p/interface-transport'
+import type { TransportManager, Upgrader } from '@libp2p/interface-transport'
 import { multiaddr, Multiaddr, protocols } from '@multiformats/multiaddr'
 import type { IncomingStreamData, Registrar } from '@libp2p/interface-registrar'
 import type { PeerId } from '@libp2p/interface-peer-id'
@@ -31,7 +31,6 @@ export interface WebRTCTransportComponents {
 
 export class WebRTCTransport implements Transport, Startable {
   private _started = false
-  private readonly handler?: ConnectionHandler
 
   constructor (
     private readonly components: WebRTCTransportComponents,
@@ -138,14 +137,13 @@ export class WebRTCTransport implements Transport, Startable {
   }
 
   async _onProtocol ({ connection, stream }: IncomingStreamData): Promise<void> {
-    let conn
     try {
       const [pc, muxerFactory] = await handleIncomingStream({
         rtcConfiguration: this.init.rtcConfiguration,
         connection,
         stream
       })
-      conn = await this.components.upgrader.upgradeInbound(new WebRTCMultiaddrConnection({
+      await this.components.upgrader.upgradeInbound(new WebRTCMultiaddrConnection({
         peerConnection: pc,
         timeline: { open: (new Date()).getTime() },
         remoteAddr: connection.remoteAddr
@@ -157,10 +155,6 @@ export class WebRTCTransport implements Transport, Startable {
     } catch (err) {
       stream.reset()
       throw err
-    }
-
-    if (this.handler != null) {
-      this.handler(conn)
     }
   }
 }
