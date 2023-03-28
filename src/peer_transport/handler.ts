@@ -63,7 +63,6 @@ export async function handleIncomingStream ({ rtcConfiguration, stream: rawStrea
 
   // wait until candidates are connected
   await readCandidatesUntilConnected(connectedPromise, pc, stream)
-  // close the dummy channel
   return [pc, muxerFactory]
 }
 
@@ -73,7 +72,7 @@ export interface ConnectOptions {
   rtcConfiguration?: RTCConfiguration
 }
 
-export async function connect ({ rtcConfiguration, signal, stream: rawStream }: ConnectOptions): Promise<[RTCPeerConnection, StreamMuxerFactory]> {
+export async function initiateConnection ({ rtcConfiguration, signal, stream: rawStream }: ConnectOptions): Promise<[RTCPeerConnection, StreamMuxerFactory]> {
   const stream = pbStream(abortableDuplex(rawStream, signal)).pb(pb.Message)
 
   // setup peer connection

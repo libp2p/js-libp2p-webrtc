@@ -6,7 +6,7 @@ import { pair } from 'it-pair'
 import { duplexPair } from 'it-pair/duplex'
 import { pbStream } from 'it-pb-stream'
 import sinon from 'sinon'
-import { connect, handleIncomingStream } from '../src/peer_transport/handler'
+import { initiateConnection, handleIncomingStream } from '../src/peer_transport/handler'
 import { Message } from '../src/peer_transport/pb/index.js'
 import { WebRTCTransport } from '../src/peer_transport/transport'
 import { detect } from 'detect-browser'
@@ -22,7 +22,7 @@ describe('webrtc basic', () => {
       mockMultiaddrConnection(pair<any>(), dstPeerId)
     )
     const controller = new AbortController()
-    const initiatorPeerConnectionPromise = connect({ stream: mockStream(initiator), signal: controller.signal })
+    const initiatorPeerConnectionPromise = initiateConnection({ stream: mockStream(initiator), signal: controller.signal })
     const receiverPeerConnectionPromise = handleIncomingStream({ stream: mockStream(receiver), connection })
     await expect(initiatorPeerConnectionPromise).to.be.fulfilled()
     await expect(receiverPeerConnectionPromise).to.be.fulfilled()
@@ -56,7 +56,7 @@ describe('webrtc dialer', () => {
   it('should fail receiving on invalid sdp answer', async () => {
     const [receiver, initiator] = duplexPair<any>()
     const controller = new AbortController()
-    const initiatorPeerConnectionPromise = connect({ signal: controller.signal, stream: mockStream(initiator) })
+    const initiatorPeerConnectionPromise = initiateConnection({ signal: controller.signal, stream: mockStream(initiator) })
     const stream = pbStream(receiver).pb(Message)
 
     {
@@ -71,7 +71,7 @@ describe('webrtc dialer', () => {
   it('should fail on receiving a candidate before an answer', async () => {
     const [receiver, initiator] = duplexPair<any>()
     const controller = new AbortController()
-    const initiatorPeerConnectionPromise = connect({ signal: controller.signal, stream: mockStream(initiator) })
+    const initiatorPeerConnectionPromise = initiateConnection({ signal: controller.signal, stream: mockStream(initiator) })
     const stream = pbStream(receiver).pb(Message)
 
     const pc = new RTCPeerConnection()

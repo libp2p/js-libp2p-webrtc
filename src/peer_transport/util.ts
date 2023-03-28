@@ -77,4 +77,3 @@ export function resolveOnConnected (pc: RTCPeerConnection, promise: DeferredProm
     }
   }
 }
-export { }

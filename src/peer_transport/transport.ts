@@ -9,7 +9,9 @@ import type { Startable } from '@libp2p/interfaces/startable'
 import { WebRTCPeerListener } from './listener.js'
 import type { PeerStore } from '@libp2p/interface-peer-store'
 import { logger } from '@libp2p/logger'
-import { connect, handleIncomingStream } from './handler.js'
+import { initiateConnection, handleIncomingStream } from './handler.js'
+import { CodeError } from '@libp2p/interfaces/errors'
+import { codes } from '../error.js'
 
 const log = logger('libp2p:webrtc:peer')
 
@@ -85,8 +87,7 @@ export class WebRTCTransport implements Transport, Startable {
     log.trace('dialing address: ', ma)
     const addrs = ma.toString().split(TRANSPORT)
     if (addrs.length !== 2) {
-      // TODO(ckousik): Change to errCode
-      throw new Error('invalid multiaddr')
+      throw new CodeError('invalid multiaddr', codes.ERR_INVALID_MULTIADDR)
     }
     // look for remote peerId
     const remoteAddr = multiaddr(addrs[0])
@@ -94,8 +95,7 @@ export class WebRTCTransport implements Transport, Startable {
 
     const destinationIdString = destination.getPeerId()
     if (destinationIdString == null) {
-      // TODO(ckousik): Change to errCode
-      throw new Error('bad destination')
+      throw new CodeError('bad destination', codes.ERR_INVALID_MULTIADDR)
     }
 
     const controller = new AbortController()
@@ -108,7 +108,7 @@ export class WebRTCTransport implements Transport, Startable {
     const rawStream = await connection.newStream([PROTOCOL], options)
 
     try {
-      const [pc, muxerFactory] = await connect({
+      const [pc, muxerFactory] = await initiateConnection({
         stream: rawStream,
         rtcConfiguration: this.init.rtcConfiguration,
         signal: options.signal
