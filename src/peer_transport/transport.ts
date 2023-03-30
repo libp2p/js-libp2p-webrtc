@@ -90,7 +90,7 @@ export class WebRTCTransport implements Transport, Startable {
       throw new CodeError('invalid multiaddr', codes.ERR_INVALID_MULTIADDR)
     }
     // look for remote peerId
-    const remoteAddr = multiaddr(addrs[0])
+    let remoteAddr = multiaddr(addrs[0])
     const destination = multiaddr(addrs[1])
 
     const destinationIdString = destination.getPeerId()
@@ -101,6 +101,14 @@ export class WebRTCTransport implements Transport, Startable {
     const controller = new AbortController()
     if (options.signal == null) {
       options.signal = controller.signal
+    }
+
+    const lastProtoInRemote = remoteAddr.protos().pop()
+    if (lastProtoInRemote === undefined) {
+      throw new CodeError('invalid multiaddr', codes.ERR_INVALID_MULTIADDR)
+    }
+    if (lastProtoInRemote.name !== 'p2p') {
+      remoteAddr = remoteAddr.encapsulate(`/p2p/${destinationIdString}`)
     }
 
     const connection = await this.components.transportManager.dial(remoteAddr)
