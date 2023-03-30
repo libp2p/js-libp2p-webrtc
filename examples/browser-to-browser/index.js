@@ -1,4 +1,4 @@
-import { multiaddr } from "@multiformats/multiaddr"
+import { multiaddr, protocols } from "@multiformats/multiaddr"
 import { pipe } from "it-pipe"
 import { fromString, toString } from "uint8arrays"
 import { webRTC } from "js-libp2p-webrtc"
@@ -69,6 +69,9 @@ node.peerStore.addEventListener("change:multiaddrs", (event) => {
 
   node.getMultiaddrs().forEach((ma) => {
     if (ma.protoCodes().includes(CIRCUIT_RELAY_CODE)) {
+      if (ma.protos().pop()?.name === 'p2p') {
+        ma = ma.decapsulateCode(protocols('p2p').code)
+      }
       const newWebrtcDirectAddress = multiaddr(ma.toString() + '/webrtc/p2p/' + node.peerId)
 
       const webrtcAddrString = newWebrtcDirectAddress.toString()
