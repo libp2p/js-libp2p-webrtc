@@ -24,13 +24,22 @@ export async function handleIncomingStream ({ rtcConfiguration, stream: rawStrea
   const muxerFactory = new DataChannelMuxerFactory(pc)
 
   const connectedPromise: DeferredPromise<void> = pDefer()
+  const answerSentPromise: DeferredPromise<void> = pDefer()
+
   signal.onabort = () => { connectedPromise.reject() }
   // candidate callbacks
   pc.onicecandidate = ({ candidate }) => {
-    stream.write({
-      type: pb.Message.Type.ICE_CANDIDATE,
-      data: (candidate != null) ? JSON.stringify(candidate.toJSON()) : ''
-    })
+    answerSentPromise.promise.then(
+      () => {
+        stream.write({
+          type: pb.Message.Type.ICE_CANDIDATE,
+          data: (candidate != null) ? JSON.stringify(candidate.toJSON()) : ''
+        })
+      },
+      (err) => {
+        log.error('cannot set candidate since sending answer failed', err)
+      }
+    )
   }
 
   resolveOnConnected(pc, connectedPromise)
@@ -52,14 +61,21 @@ export async function handleIncomingStream ({ rtcConfiguration, stream: rawStrea
   })
 
   // create and write an SDP answer
-  const answer = await pc.createAnswer()
+  const answer = await pc.createAnswer().catch(err => {
+    log.error('could not execute createAnswer', err)
+    answerSentPromise.reject(err)
+    throw new Error('Failed to create answer')
+  })
   // write the answer to the remote
   stream.write({ type: pb.Message.Type.SDP_ANSWER, data: answer.sdp })
 
   await pc.setLocalDescription(answer).catch(err => {
     log.error('could not execute setLocalDescription', err)
+    answerSentPromise.reject(err)
     throw new Error('Failed to set localDescription')
   })
+
+  answerSentPromise.resolve()
 
   // wait until candidates are connected
   await readCandidatesUntilConnected(connectedPromise, pc, stream)
