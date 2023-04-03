@@ -2,6 +2,10 @@
 
 This example leverages the [vite bundler](https://vitejs.dev/) to compile and serve the libp2p code in the browser. You can use other bundlers such as Webpack, but we will not be covering them here.
 
+## Build the `@libp2p/webrtc` package
+
+Build the `@libp2p/webrtc` package by calling `npm i && npm run build` in the repository root.
+
 ## Running the Relay Server
 
 For browsers to communicate, we first need to run the LibP2P relay server:
