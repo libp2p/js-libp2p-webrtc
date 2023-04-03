@@ -10,8 +10,6 @@ import { createLibp2p } from "libp2p"
 import { circuitRelayTransport } from 'libp2p/circuit-relay'
 import { noise } from "@chainsafe/libp2p-noise"
 
-// singletons
-let outgoing_stream
 let webrtcDirectAddress
 
 const CIRCUIT_RELAY_CODE = 290
@@ -100,7 +98,7 @@ window.connect.onclick = async () => {
     return
   }
 
-  outgoing_stream = await connection.newStream(["/echo/1.0.0"])
+  const outgoing_stream = await connection.newStream(["/echo/1.0.0"])
 
   pipe(sender, outgoing_stream, async (src) => {
     for await (const buf of src) {
