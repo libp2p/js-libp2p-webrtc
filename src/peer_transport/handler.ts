@@ -94,16 +94,15 @@ export async function initiateConnection ({ rtcConfiguration, signal, stream: ra
   // setup peer connection
   const pc = new RTCPeerConnection(rtcConfiguration)
   const muxerFactory = new DataChannelMuxerFactory(pc)
-  // the label is not relevant to connection initiation but can be
-  // useful for debugging
 
   const connectedPromise: DeferredPromise<void> = pDefer()
   resolveOnConnected(pc, connectedPromise)
 
   // reject the connectedPromise if the signal aborts
   signal.onabort = connectedPromise.reject
-  // we create the channel so that the peerconnection has a component for
-  // which to collect candidates
+  // we create the channel so that the peerconnection has a component for which
+  // to collect candidates. The label is not relevant to connection initiation
+  // but can be useful for debugging
   const channel = pc.createDataChannel('init')
   // setup callback to write ICE candidates to the remote
   // peer
