@@ -211,19 +211,12 @@ export class WebRTCDirectTransport implements Transport {
       throw invalidArgument('no local certificate')
     }
 
-    const localCert = pc.getConfiguration().certificates?.at(0)
-
-    if (localCert === undefined || localCert.getFingerprints().length === 0) {
-      throw invalidArgument('no fingerprint on local certificate')
+    const localFingerprint = sdp.getLocalFingerprint(pc)
+    if (localFingerprint == null) {
+      throw invalidArgument('no local fingerprint found')
     }
 
-    const localFingerprint = localCert.getFingerprints()[0]
-
-    if (localFingerprint.value === undefined) {
-      throw invalidArgument('no fingerprint on local certificate')
-    }
-
-    const localFpString = localFingerprint.value.replace(/:/g, '')
+    const localFpString = localFingerprint.toLowerCase().replaceAll(':', '')
     const localFpArray = uint8arrayFromString(localFpString, 'hex')
     const local = multihashes.encode(localFpArray, hashCode)
     const remote: Uint8Array = sdp.mbdecoder.decode(sdp.certhash(ma))

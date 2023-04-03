@@ -7,6 +7,10 @@ import type { HashCode, HashName } from 'multihashes'
 import { inappropriateMultiaddr, invalidArgument, invalidFingerprint, unsupportedHashAlgorithm } from './error.js'
 import { CERTHASH_CODE } from './transport.js'
 
+// import { detect } from 'detect-browser'
+
+// const browser = detect()
+
 const log = logger('libp2p:webrtc:sdp')
 
 /**
@@ -15,6 +19,23 @@ const log = logger('libp2p:webrtc:sdp')
 // @ts-expect-error - Not easy to combine these types.
 export const mbdecoder: any = Object.values(bases).map(b => b.decoder).reduce((d, b) => d.or(b))
 
+export function getLocalFingerprint (pc: RTCPeerConnection): string | undefined {
+  const localDescription = pc.localDescription
+  if (localDescription == null) {
+    return undefined
+  }
+  return getFingerprintFromSdp(localDescription.sdp)
+}
+
+const fingerprintRegex = /^a=fingerprint:(?:\w+-[0-9]+)\s(?<fingerprint>(:?[0-9a-fA-F]{2})+)$/gm
+function getFingerprintFromSdp (sdp: string): string | undefined {
+  const searchResult = fingerprintRegex.exec(sdp)
+  if (searchResult == null) {
+    return ''
+  }
+
+  return searchResult.groups?.fingerprint
+}
 /**
  * Get base2 | identity decoders
  */
