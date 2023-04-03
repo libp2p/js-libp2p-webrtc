@@ -44,36 +44,19 @@ export const readCandidatesUntilConnected = async (connectedPromise: DeferredPro
 }
 
 export function resolveOnConnected (pc: RTCPeerConnection, promise: DeferredPromise<void>): void {
-  if (!isFirefox) {
-    pc.onconnectionstatechange = (_) => {
-      log.trace('receiver peerConnectionState state: ', pc.connectionState)
-      switch (pc.connectionState) {
-        case 'connected':
-          promise.resolve()
-          break
-        case 'failed':
-        case 'disconnected':
-        case 'closed':
-          promise.reject()
-          break
-        default:
-          break
-      }
-    }
-  } else {
-    pc.oniceconnectionstatechange = (_) => {
-      switch (pc.iceConnectionState) {
-        case 'connected':
-          promise.resolve()
-          break
-        case 'failed':
-        case 'disconnected':
-        case 'closed':
-          promise.reject()
-          break
-        default:
-          break
-      }
+  pc[isFirefox ? 'oniceconnectionstatechange' : 'onconnectionstatechange'] = (_) => {
+    log.trace('receiver peerConnectionState state: ', pc.connectionState)
+    switch (isFirefox ? pc.iceConnectionState : pc.connectionState) {
+      case 'connected':
+        promise.resolve()
+        break
+      case 'failed':
+      case 'disconnected':
+      case 'closed':
+        promise.reject()
+        break
+      default:
+        break
     }
   }
 }
