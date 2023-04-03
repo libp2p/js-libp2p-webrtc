@@ -33,7 +33,7 @@ async function spawnGoLibp2p() {
       const addr = String(data).match(/p2p addr:  ([^\s]*)/)
       if (addr !== null && addr.length > 0) {
         resolve(addr[1])
-      }        
+      }
     })
   }))
   return { server, serverAddr }
@@ -71,7 +71,7 @@ play.describe('bundle ipfs with parceljs:', () => {
 
   play('should connect to a go-libp2p node over webrtc', async ({ page }) => {
     const message = 'hello'
-    
+
     // add the go libp2p multiaddress to the input field and submit
     await page.fill(connectAddr, serverAddr)
     await page.click(connectBtn)

@@ -97,7 +97,7 @@ export async function initiateConnection ({ rtcConfiguration, signal, stream: ra
   // the label is not relevant to connection initiation but can be
   // useful for debugging
 
-  const connectedPromise = pDefer()
+  const connectedPromise: DeferredPromise<void> = pDefer()
   resolveOnConnected(pc, connectedPromise)
 
   // reject the connectedPromise if the signal aborts
