@@ -38,7 +38,6 @@ export class WebRTCTransport implements Transport, Startable {
     private readonly components: WebRTCTransportComponents,
     private readonly init: WebRTCTransportInit
   ) {
-    this._onProtocol = this._onProtocol.bind(this)
   }
 
   isStarted (): boolean {
@@ -98,8 +97,8 @@ export class WebRTCTransport implements Transport, Startable {
       throw new CodeError('bad destination', codes.ERR_INVALID_MULTIADDR)
     }
 
-    const controller = new AbortController()
     if (options.signal == null) {
+      const controller = new AbortController()
       options.signal = controller.signal
     }
 

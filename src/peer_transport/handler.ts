@@ -138,4 +138,3 @@ export async function initiateConnection ({ rtcConfiguration, signal, stream: ra
   channel.close()
   return [pc, muxerFactory]
 }
-export { }

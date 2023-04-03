@@ -455,8 +455,7 @@ export class WebRTCStream implements Stream {
 
   eq (stream: Stream): boolean {
     if (stream instanceof WebRTCStream) {
-      const s = stream
-      return s.channel.id === this.channel.id
+      return stream.channel.id === this.channel.id
     }
     return false
   }
