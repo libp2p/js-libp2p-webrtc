@@ -91,9 +91,8 @@ play.describe('bundle ipfs with parceljs:', () => {
     const connections = await page.textContent(output)
 
 
-    // TODO: These are disabled until the webrtc protocol rename is completed in Go
-    // expect(connections).toContain(`Dialing '${serverAddr}'`)
-    // expect(connections).toContain(`Peer connected '${serverAddr}'`)
+    expect(connections).toContain(`Dialing '${serverAddr}'`)
+    expect(connections).toContain(`Peer connected '${serverAddr}'`)
 
 
 

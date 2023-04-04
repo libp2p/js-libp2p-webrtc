@@ -3,7 +3,7 @@ module github.com/libp2p/js-libp2p-webrtc/examples/go-libp2p-server
 go 1.18
 
 // TODO: Remove this once webrtc is merged into Go libp2p
-replace github.com/libp2p/go-libp2p v0.26.3 => github.com/GlenDC/go-libp2p v0.24.3-0.20230323141540-522fa8afe30a
+replace github.com/libp2p/go-libp2p => github.com/libp2p/go-libp2p v0.26.1-0.20230404184453-257fbfba50c3
 
 require github.com/libp2p/go-libp2p v0.26.3
 
