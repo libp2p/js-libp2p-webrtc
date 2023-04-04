@@ -7,10 +7,6 @@ import type { HashCode, HashName } from 'multihashes'
 import { inappropriateMultiaddr, invalidArgument, invalidFingerprint, unsupportedHashAlgorithm } from './error.js'
 import { CERTHASH_CODE } from './transport.js'
 
-// import { detect } from 'detect-browser'
-
-// const browser = detect()
-
 const log = logger('libp2p:webrtc:sdp')
 
 /**
