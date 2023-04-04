@@ -47,7 +47,6 @@ export async function handleIncomingStream ({ rtcConfiguration, stream: rawStrea
   // read an SDP offer
   const pbOffer = await stream.read()
   if (pbOffer.type !== pb.Message.Type.SDP_OFFER) {
-    // TODO: Find better way to print undefined without linter complaining
     throw new Error(`expected message type SDP_OFFER, received: ${pbOffer.type ?? 'undefined'} `)
   }
   const offer = new RTCSessionDescription({
