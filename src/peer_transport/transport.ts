@@ -16,8 +16,10 @@ import { codes } from '../error.js'
 const log = logger('libp2p:webrtc:peer')
 
 export const TRANSPORT = '/webrtc'
+export const TRANSPORT_DIRECT = '/webrtc-direct'
 export const PROTOCOL = '/webrtc-signaling/0.0.1'
-export const CODE = protocols('webrtc').code
+export const WEBRTC_CODE = protocols('webrtc').code
+export const WEBRTC_DIRECT_CODE = protocols('webrtc-direct').code
 
 export interface WebRTCTransportInit {
   rtcConfiguration?: RTCConfiguration
@@ -71,7 +73,7 @@ export class WebRTCTransport implements Transport, Startable {
   filter (multiaddrs: Multiaddr[]): Multiaddr[] {
     return multiaddrs.filter((ma) => {
       const codes = ma.protoCodes()
-      return codes.includes(CODE)
+      return codes.includes(WEBRTC_CODE) || codes.includes(WEBRTC_DIRECT_CODE)
     })
   }
 
@@ -84,7 +86,18 @@ export class WebRTCTransport implements Transport, Startable {
   */
   async dial (ma: Multiaddr, options: DialOptions): Promise<Connection> {
     log.trace('dialing address: ', ma)
-    const addrs = ma.toString().split(TRANSPORT)
+    let addrs: string[] | null = null;
+    if (ma.toString().includes(TRANSPORT_DIRECT)) {
+      addrs = ma.toString().split(TRANSPORT_DIRECT);
+      // addrs[0] = addrs[0] + TRANSPORT_DIRECT;
+    } else if (ma.toString().includes(TRANSPORT)) {
+      addrs = ma.toString().split(TRANSPORT);
+      // addrs[0] = addrs[0] + TRANSPORT;
+    }
+    if (addrs == null) {
+      throw new CodeError('invalid multiaddr', codes.ERR_INVALID_MULTIADDR)
+    }
+
     if (addrs.length !== 2) {
       throw new CodeError('invalid multiaddr', codes.ERR_INVALID_MULTIADDR)
     }
