@@ -84,13 +84,13 @@ export class WebRTCTransport implements Transport, Startable {
   */
   async dial (ma: Multiaddr, options: DialOptions): Promise<Connection> {
     log.trace('dialing address: ', ma)
-    const addrs = ma.toString().split(TRANSPORT)
+    const addrs = ma.toString().split(`${TRANSPORT}/`)
     if (addrs.length !== 2) {
       throw new CodeError('invalid multiaddr', codes.ERR_INVALID_MULTIADDR)
     }
     // look for remote peerId
     let remoteAddr = multiaddr(addrs[0])
-    const destination = multiaddr(addrs[1])
+    const destination = multiaddr('/' + addrs[1])
 
     const destinationIdString = destination.getPeerId()
     if (destinationIdString == null) {
