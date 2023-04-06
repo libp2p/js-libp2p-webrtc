@@ -239,5 +239,5 @@ export class WebRTCDirectTransport implements Transport {
  */
 function validMa (ma: Multiaddr): boolean {
   const codes = ma.protoCodes()
-  return codes.includes(WEBRTC_CODE) && codes.includes(CERTHASH_CODE) && ma.getPeerId() != null
+  return codes.includes(WEBRTC_CODE) && codes.includes(CERTHASH_CODE) && ma.getPeerId() != null && !codes.includes(protocols('p2p-circuit').code)
 }
