@@ -16,7 +16,7 @@ import { codes } from '../error.js'
 const log = logger('libp2p:webrtc:peer')
 
 export const TRANSPORT = '/webrtc'
-export const PROTOCOL = '/webrtc-signaling/0.0.1'
+export const SIGNALING_PROTO_ID = '/webrtc-signaling/0.0.1'
 export const CODE = protocols('webrtc').code
 
 export interface WebRTCTransportInit {
@@ -45,14 +45,14 @@ export class WebRTCTransport implements Transport, Startable {
   }
 
   async start (): Promise<void> {
-    await this.components.registrar.handle(PROTOCOL, (data) => {
+    await this.components.registrar.handle(SIGNALING_PROTO_ID, (data) => {
       this._onProtocol(data).catch(err => { log.error('failed to handle incoming connect from %p', data.connection.remotePeer, err) })
     })
     this._started = true
   }
 
   async stop (): Promise<void> {
-    await this.components.registrar.unhandle(PROTOCOL)
+    await this.components.registrar.unhandle(SIGNALING_PROTO_ID)
     this._started = false
   }
 
@@ -112,7 +112,7 @@ export class WebRTCTransport implements Transport, Startable {
 
     const connection = await this.components.transportManager.dial(remoteAddr)
 
-    const rawStream = await connection.newStream([PROTOCOL], options)
+    const rawStream = await connection.newStream([SIGNALING_PROTO_ID], options)
 
     try {
       const [pc, muxerFactory] = await initiateConnection({
