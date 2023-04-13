@@ -151,7 +151,7 @@
     "@protobuf-ts/runtime": "^2.8.0",
     "abortable-iterator": "^4.0.2",
     "err-code": "^3.0.1",
-    "it-length-prefixed": "^8.0.3",
+    "it-length-prefixed": "^9.0.0",
     "it-merge": "^2.0.0",
     "it-pb-stream": "^3.2.1",
     "it-pipe": "^3.0.1",
