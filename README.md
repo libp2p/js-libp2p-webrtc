@@ -77,7 +77,7 @@ Examples can be found in the [examples folder](examples/README.md).
 
 Browsers can usually only `dial`, but `listen` is supported in the WebRTC
 transport when paired with another listener like CircuitV2, where you listen on
-a relayed connection. Take a look at `examples/browser-to-browser/index.js` for
+a relayed connection. Take a look at [index.js](examples/browser-to-browser/index.js) for
 an example.
 
 ### Connection
