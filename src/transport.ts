@@ -16,6 +16,7 @@ import * as sdp from './sdp.js'
 import { WebRTCStream } from './stream.js'
 import { genUfrag } from './util.js'
 import { protocols } from '@multiformats/multiaddr'
+import { isFirefox } from './peer_transport/util.js'
 
 const log = logger('libp2p:webrtc:transport')
 
@@ -189,9 +190,41 @@ export class WebRTCDirectTransport implements Transport {
       peerConnection,
       remoteAddr: ma,
       timeline: {
-        open: (new Date()).getTime()
+        open: Date.now()
       }
     })
+
+    if (isFirefox) {
+      peerConnection.addEventListener('oniceconnectionstatechange', () => {
+        switch (peerConnection.connectionState) {
+          case 'failed':
+          case 'disconnected':
+          case 'closed':
+            maConn.close().catch((err) => {
+              log.error('error closing connection', err)
+            })
+            break
+
+          default:
+            break
+        }
+      })
+    } else {
+      peerConnection.addEventListener('onconnectionstatechange', () => {
+        switch (peerConnection.connectionState) {
+          case 'failed':
+          case 'disconnected':
+          case 'closed':
+            maConn.close().catch((err) => {
+              log.error('error closing connection', err)
+            })
+            break
+
+          default:
+            break
+        }
+      })
+    }
 
     const muxerFactory = new DataChannelMuxerFactory(peerConnection)
 

@@ -13,6 +13,7 @@ import { logger } from '@libp2p/logger'
 import { initiateConnection, handleIncomingStream } from './handler.js'
 import { CodeError } from '@libp2p/interfaces/errors'
 import { codes } from '../error.js'
+import { isFirefox } from './util.js'
 
 const log = logger('libp2p:webrtc:peer')
 
@@ -131,7 +132,7 @@ export class WebRTCTransport implements Transport, Startable {
       const result = await options.upgrader.upgradeOutbound(
         new WebRTCMultiaddrConnection({
           peerConnection: pc,
-          timeline: { open: (new Date()).getTime() },
+          timeline: { open: Date.now() },
           remoteAddr: webrtcMultiaddr
         }),
         {
@@ -140,6 +141,38 @@ export class WebRTCTransport implements Transport, Startable {
           muxerFactory
         }
       )
+
+      if (isFirefox) {
+        pc.addEventListener('oniceconnectionstatechange', () => {
+          switch (pc.connectionState) {
+            case 'failed':
+            case 'disconnected':
+            case 'closed':
+              result.close().catch((err) => {
+                log.error('error closing connection', err)
+              })
+              break
+
+            default:
+              break
+          }
+        })
+      } else {
+        pc.addEventListener('onconnectionstatechange', () => {
+          switch (pc.connectionState) {
+            case 'failed':
+            case 'disconnected':
+            case 'closed':
+              result.close().catch((err) => {
+                log.error('error closing connection', err)
+              })
+              break
+
+            default:
+              break
+          }
+        })
+      }
 
       // close the stream if SDP has been exchanged successfully
       rawStream.close()

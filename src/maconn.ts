@@ -61,7 +61,7 @@ export class WebRTCMultiaddrConnection implements MultiaddrConnection {
       log.error('error closing connection', err)
     }
 
-    this.timeline.close = new Date().getTime()
+    this.timeline.close = Date.now()
     this.peerConnection.close()
   }
 }
