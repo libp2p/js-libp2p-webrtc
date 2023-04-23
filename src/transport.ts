@@ -6,54 +6,53 @@ import { logger } from '@libp2p/logger'
 import * as p from '@libp2p/peer-id'
 import type { Multiaddr } from '@multiformats/multiaddr'
 import * as multihashes from 'multihashes'
-import defer from 'p-defer'
-import { v4 as genUuid } from 'uuid'
 import { fromString as uint8arrayFromString } from 'uint8arrays/from-string'
 import { concat } from 'uint8arrays/concat'
-
 import { dataChannelError, inappropriateMultiaddr, unimplemented, invalidArgument } from './error.js'
 import { WebRTCMultiaddrConnection } from './maconn.js'
 import { DataChannelMuxerFactory } from './muxer.js'
 import type { WebRTCDialOptions } from './options.js'
 import * as sdp from './sdp.js'
 import { WebRTCStream } from './stream.js'
+import { genUfrag } from './util.js'
+import { protocols } from '@multiformats/multiaddr'
 
 const log = logger('libp2p:webrtc:transport')
 
 /**
  * The time to wait, in milliseconds, for the data channel handshake to complete
  */
-const HANDSHAKE_TIMEOUT_MS = 10000
+const HANDSHAKE_TIMEOUT_MS = 10_000
 
 /**
  * Created by converting the hexadecimal protocol code to an integer.
  *
  * {@link https://github.com/multiformats/multiaddr/blob/master/protocols.csv}
  */
-export const WEBRTC_CODE: number = 280
+export const WEBRTC_CODE: number = protocols('webrtc-direct').code
 
 /**
  * Created by converting the hexadecimal protocol code to an integer.
  *
  * {@link https://github.com/multiformats/multiaddr/blob/master/protocols.csv}
  */
-export const CERTHASH_CODE: number = 466
+export const CERTHASH_CODE: number = protocols('certhash').code
 
 /**
  * The peer for this transport
  */
 // @TODO(ddimaria): seems like an unnessary abstraction, consider removing
-export interface WebRTCTransportComponents {
+export interface WebRTCDirectTransportComponents {
   peerId: PeerId
 }
 
-export class WebRTCTransport implements Transport {
+export class WebRTCDirectTransport implements Transport {
   /**
    * The peer for this transport
    */
-  private readonly components: WebRTCTransportComponents
+  private readonly components: WebRTCDirectTransportComponents
 
-  constructor (components: WebRTCTransportComponents) {
+  constructor (components: WebRTCDirectTransportComponents) {
     this.components = components
   }
 
@@ -84,7 +83,7 @@ export class WebRTCTransport implements Transport {
    * Implement toString() for WebRTCTransport
    */
   get [Symbol.toStringTag] (): string {
-    return '@libp2p/webrtc'
+    return '@libp2p/webrtc-direct'
   }
 
   /**
@@ -98,11 +97,11 @@ export class WebRTCTransport implements Transport {
    * Connect to a peer using a multiaddr
    */
   async _connect (ma: Multiaddr, options: WebRTCDialOptions): Promise<Connection> {
-    const rps = ma.getPeerId()
-
-    if (rps === null) {
+    const remotePeerString = ma.getPeerId()
+    if (remotePeerString === null) {
       throw inappropriateMultiaddr("we need to have the remote's PeerId")
     }
+    const theirPeerId = p.peerIdFromString(remotePeerString)
 
     const remoteCerthash = sdp.decodeCerthash(sdp.certhash(ma))
 
@@ -120,31 +119,32 @@ export class WebRTCTransport implements Transport {
     // create data channel for running the noise handshake. Once the data channel is opened,
     // the remote will initiate the noise handshake. This is used to confirm the identity of
     // the peer.
-    const dataChannelOpenPromise = defer()
-    const handshakeDataChannel = peerConnection.createDataChannel('handshake', { negotiated: true, id: 0 })
-    const handhsakeTimeout = setTimeout(() => {
-      const error = `Data channel was never opened: state: ${handshakeDataChannel.readyState}`
-      log.error(error)
-      dataChannelOpenPromise.reject(dataChannelError('data', error))
-    }, HANDSHAKE_TIMEOUT_MS)
+    const dataChannelOpenPromise = new Promise<RTCDataChannel>((resolve, reject) => {
+      const handshakeDataChannel = peerConnection.createDataChannel('', { negotiated: true, id: 0 })
+      const handshakeTimeout = setTimeout(() => {
+        const error = `Data channel was never opened: state: ${handshakeDataChannel.readyState}`
+        log.error(error)
+        reject(dataChannelError('data', error))
+      }, HANDSHAKE_TIMEOUT_MS)
 
-    handshakeDataChannel.onopen = (_) => {
-      clearTimeout(handhsakeTimeout)
-      dataChannelOpenPromise.resolve()
-    }
+      handshakeDataChannel.onopen = (_) => {
+        clearTimeout(handshakeTimeout)
+        resolve(handshakeDataChannel)
+      }
 
-    // ref: https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel/error_event
-    handshakeDataChannel.onerror = (event: Event) => {
-      clearTimeout(handhsakeTimeout)
-      const errorTarget = event.target?.toString() ?? 'not specified'
-      const error = `Error opening a data channel for handshaking: ${errorTarget}`
-      log.error(error)
-      dataChannelOpenPromise.reject(dataChannelError('data', error))
-    }
+      // ref: https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel/error_event
+      handshakeDataChannel.onerror = (event: Event) => {
+        clearTimeout(handshakeTimeout)
+        const errorTarget = event.target?.toString() ?? 'not specified'
+        const error = `Error opening a data channel for handshaking: ${errorTarget}`
+        log.error(error)
+        reject(dataChannelError('data', error))
+      }
+    })
 
-    const ufrag = 'libp2p+webrtc+v1/' + genUuid().replaceAll('-', '')
+    const ufrag = 'libp2p+webrtc+v1/' + genUfrag(32)
 
-    // Create offer and munge sdp with ufrag = pwd. This allows the remote to
+    // Create offer and munge sdp with ufrag == pwd. This allows the remote to
     // respond to STUN messages without performing an actual SDP exchange.
     // This is because it can infer the passwd field by reading the USERNAME
     // attribute of the STUN message.
@@ -157,23 +157,23 @@ export class WebRTCTransport implements Transport {
     await peerConnection.setRemoteDescription(answerSdp)
 
     // wait for peerconnection.onopen to fire, or for the datachannel to open
-    await dataChannelOpenPromise.promise
+    const handshakeDataChannel = await dataChannelOpenPromise
 
     const myPeerId = this.components.peerId
-    const theirPeerId = p.peerIdFromString(rps)
 
     // Do noise handshake.
     // Set the Noise Prologue to libp2p-webrtc-noise:<FINGERPRINTS> before starting the actual Noise handshake.
     // <FINGERPRINTS> is the concatenation of the of the two TLS fingerprints of A and B in their multihash byte representation, sorted in ascending order.
-    const fingerprintsPrologue = this.generateNoisePrologue(peerConnection, remoteCerthash.name, ma)
+    const fingerprintsPrologue = this.generateNoisePrologue(peerConnection, remoteCerthash.code, ma)
 
     // Since we use the default crypto interface and do not use a static key or early data,
     // we pass in undefined for these parameters.
-    const noiseInit = { staticNoiseKey: undefined, extensions: undefined, crypto: undefined, prologueBytes: fingerprintsPrologue }
-    const noise = Noise(noiseInit)()
-    const wrappedChannel = new WebRTCStream({ channel: handshakeDataChannel, stat: { direction: 'outbound', timeline: { open: 1 } } })
+    const noise = Noise({ prologueBytes: fingerprintsPrologue })()
+
+    const wrappedChannel = new WebRTCStream({ channel: handshakeDataChannel, stat: { direction: 'inbound', timeline: { open: 1 } } })
     const wrappedDuplex = {
       ...wrappedChannel,
+      sink: wrappedChannel.sink.bind(wrappedChannel),
       source: {
         [Symbol.asyncIterator]: async function * () {
           for await (const list of wrappedChannel.source) {
@@ -206,7 +206,7 @@ export class WebRTCTransport implements Transport {
    * Generate a noise prologue from the peer connection's certificate.
    * noise prologue = bytes('libp2p-webrtc-noise:') + noise-responder fingerprint + noise-initiator fingerprint
    */
-  private generateNoisePrologue (pc: RTCPeerConnection, hashName: multihashes.HashName, ma: Multiaddr): Uint8Array {
+  private generateNoisePrologue (pc: RTCPeerConnection, hashCode: multihashes.HashCode, ma: Multiaddr): Uint8Array {
     if (pc.getConfiguration().certificates?.length === 0) {
       throw invalidArgument('no local certificate')
     }
@@ -225,7 +225,7 @@ export class WebRTCTransport implements Transport {
 
     const localFpString = localFingerprint.value.replace(/:/g, '')
     const localFpArray = uint8arrayFromString(localFpString, 'hex')
-    const local = multihashes.encode(localFpArray, multihashes.names[hashName])
+    const local = multihashes.encode(localFpArray, hashCode)
     const remote: Uint8Array = sdp.mbdecoder.decode(sdp.certhash(ma))
     const prefix = uint8arrayFromString('libp2p-webrtc-noise:')
 
@@ -239,5 +239,5 @@ export class WebRTCTransport implements Transport {
  */
 function validMa (ma: Multiaddr): boolean {
   const codes = ma.protoCodes()
-  return codes.includes(WEBRTC_CODE) && codes.includes(CERTHASH_CODE) && ma.getPeerId() != null
+  return codes.includes(WEBRTC_CODE) && codes.includes(CERTHASH_CODE) && ma.getPeerId() != null && !codes.includes(protocols('p2p-circuit').code)
 }
