@@ -23,9 +23,9 @@ describe('WebRTC Transport', () => {
 
   before(async () => {
     metrics = stubObject<Metrics>({
-      trackMultiaddrConnection: (maConn) => {},
-      trackProtocolStream: (stream, connection) => {},
-      registerMetric: (name, options) => {
+      trackMultiaddrConnection: (_maConn) => {},
+      trackProtocolStream: (_stream, _connection) => {},
+      registerMetric: (_name, _options) => {
         return stubObject<Metric>({
           increment: () => {},
           reset: () => {},
@@ -36,7 +36,7 @@ describe('WebRTC Transport', () => {
           }
         })
       },
-      registerMetricGroup: (name, options) => {
+      registerMetricGroup: (_name, _options) => {
         return stubObject<MetricGroup>({
           increment: () => {
           },
@@ -48,13 +48,13 @@ describe('WebRTC Transport', () => {
           }
         })
       },
-      registerCounter: (name, options) => {
+      registerCounter: (_name, _options) => {
         return stubObject<Counter>({
           increment: () => {},
           reset: () => {}
         })
       },
-      registerCounterGroup: (name, options) => {
+      registerCounterGroup: (_name, _options) => {
         return stubObject<CounterGroup>({
           increment: () => {},
           reset: () => {}

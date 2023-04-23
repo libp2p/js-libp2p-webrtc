@@ -17,8 +17,9 @@ export class DataChannelMuxerFactory implements StreamMuxerFactory {
    */
   private readonly peerConnection: RTCPeerConnection
   private streamBuffer: WebRTCStream[] = []
+  private readonly metrics?: CounterGroup
 
-  constructor (peerConnection: RTCPeerConnection, readonly protocol = '/webrtc') {
+  constructor (peerConnection: RTCPeerConnection, metrics?: CounterGroup, readonly protocol = '/webrtc') {
     this.peerConnection = peerConnection
     // store any datachannels opened before upgrade has been completed
     this.peerConnection.ondatachannel = ({ channel }) => {
@@ -34,10 +35,11 @@ export class DataChannelMuxerFactory implements StreamMuxerFactory {
       })
       this.streamBuffer.push(stream)
     }
+    this.metrics = metrics
   }
 
   createStreamMuxer (init?: StreamMuxerInit | undefined): StreamMuxer {
-    return new DataChannelMuxer(this.peerConnection,  this.metrics, this.streamBuffer, this.protocol, init)
+    return new DataChannelMuxer(this.peerConnection, this.streamBuffer, this.protocol, init, this.metrics)
   }
 }
 
@@ -54,11 +56,6 @@ export class DataChannelMuxer implements StreamMuxer {
    * Optional metrics for this data channel muxer
    */
   private readonly metrics?: CounterGroup
-
-  /**
-   * The protocol as represented in the multiaddress
-   */
-  readonly protocol: string = '/webrtc'
 
   /**
    * Array of streams in the data channel
@@ -85,7 +82,7 @@ export class DataChannelMuxer implements StreamMuxer {
    */
   sink: Sink<Uint8Array, Promise<void>> = nopSink
 
-  constructor (peerConnection: RTCPeerConnection, metrics?: CounterGroup, streams: Stream[], readonly protocol = '/webrtc', init?: StreamMuxerInit) {
+  constructor (peerConnection: RTCPeerConnection, streams: Stream[], readonly protocol: string = '/webrtc', init?: StreamMuxerInit, metrics?: CounterGroup) {
     /**
      * Initialized stream muxer
      */
@@ -137,7 +134,7 @@ export class DataChannelMuxer implements StreamMuxer {
   newStream (): Stream {
     // The spec says the label SHOULD be an empty string: https://github.com/libp2p/specs/blob/master/webrtc/README.md#rtcdatachannel-label
     const channel = this.peerConnection.createDataChannel('')
-    const closeCb = (stream: WebRTCStream): void => {
+    const closeCb = (stream: Stream): void => {
       this.metrics?.increment({ stream_end: true })
       this.init?.onStreamEnd?.(stream)
     }
@@ -149,7 +146,7 @@ export class DataChannelMuxer implements StreamMuxer {
           open: 0
         }
       },
-      closeCb: this.wrapStreamEnd(this.init?.onStreamEnd)
+      closeCb: this.wrapStreamEnd(closeCb)
     })
     this.streams.push(stream)
 
