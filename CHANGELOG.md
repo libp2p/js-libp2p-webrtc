@@ -1,3 +1,68 @@
+## [1.1.6](https://github.com/libp2p/js-libp2p-webrtc/compare/v1.1.5...v1.1.6) (2023-04-21)
+
+
+### Bug Fixes
+
+* readme: Remove confusing section ([#122](https://github.com/libp2p/js-libp2p-webrtc/issues/122)) ([dc78154](https://github.com/libp2p/js-libp2p-webrtc/commit/dc781543b8175c6c40c6745029a4ba53587aef29))
+
+## [1.1.5](https://github.com/libp2p/js-libp2p-webrtc/compare/v1.1.4...v1.1.5) (2023-04-13)
+
+
+### Dependencies
+
+* bump it-pipe from 2.0.5 to 3.0.1 ([#111](https://github.com/libp2p/js-libp2p-webrtc/issues/111)) ([7e593a3](https://github.com/libp2p/js-libp2p-webrtc/commit/7e593a34b44b7a2cf4758df2218b3ba9ebacfce9))
+* bump protons-runtime from 4.0.2 to 5.0.0 ([#117](https://github.com/libp2p/js-libp2p-webrtc/issues/117)) ([87cbb19](https://github.com/libp2p/js-libp2p-webrtc/commit/87cbb193e2a45642333498d9317ab17eb527d34d))
+* **dev:** bump protons from 6.1.3 to 7.0.2 ([#119](https://github.com/libp2p/js-libp2p-webrtc/issues/119)) ([fd20f4f](https://github.com/libp2p/js-libp2p-webrtc/commit/fd20f4f7a182a8edca5a511fe747885d24a60652))
+
+## [1.1.4](https://github.com/libp2p/js-libp2p-webrtc/compare/v1.1.3...v1.1.4) (2023-04-13)
+
+
+### Dependencies
+
+* Update multiaddr to 12.1.1 and multiformats 11.0.2 ([#123](https://github.com/libp2p/js-libp2p-webrtc/issues/123)) ([e069784](https://github.com/libp2p/js-libp2p-webrtc/commit/e069784229f2495b3cebc2c2a85969f23f0e7acf))
+
+## [1.1.3](https://github.com/libp2p/js-libp2p-webrtc/compare/v1.1.2...v1.1.3) (2023-04-12)
+
+
+### Dependencies
+
+* bump @libp2p/interface-connection from 3.1.1 to 4.0.0 ([#124](https://github.com/libp2p/js-libp2p-webrtc/issues/124)) ([4146761](https://github.com/libp2p/js-libp2p-webrtc/commit/4146761226118268d510c8834f894083ba5408d3))
+
+## [1.1.2](https://github.com/libp2p/js-libp2p-webrtc/compare/v1.1.1...v1.1.2) (2023-04-11)
+
+
+### Bug Fixes
+
+* update multiaddr in webrtc connection to include webRTC ([#121](https://github.com/libp2p/js-libp2p-webrtc/issues/121)) ([6ea04db](https://github.com/libp2p/js-libp2p-webrtc/commit/6ea04db9800259963affcb3101ea542de79271c0))
+
+## [1.1.1](https://github.com/libp2p/js-libp2p-webrtc/compare/v1.1.0...v1.1.1) (2023-04-10)
+
+
+### Dependencies
+
+* bump it-pb-stream from 2.0.4 to 3.2.1 ([#118](https://github.com/libp2p/js-libp2p-webrtc/issues/118)) ([7e2ac67](https://github.com/libp2p/js-libp2p-webrtc/commit/7e2ac6795ea096b3cf5dc2c4077f6f39821e0502))
+
+## [1.1.0](https://github.com/libp2p/js-libp2p-webrtc/compare/v1.0.5...v1.1.0) (2023-04-07)
+
+
+### Features
+
+* Browser to Browser ([#90](https://github.com/libp2p/js-libp2p-webrtc/issues/90)) ([add5c46](https://github.com/libp2p/js-libp2p-webrtc/commit/add5c467a2d02058933e6e11751af0c850568eaf))
+
+## [1.0.5](https://github.com/libp2p/js-libp2p-webrtc/compare/v1.0.4...v1.0.5) (2023-03-30)
+
+
+### Bug Fixes
+
+* correction package.json exports types path ([#103](https://github.com/libp2p/js-libp2p-webrtc/issues/103)) ([c78851f](https://github.com/libp2p/js-libp2p-webrtc/commit/c78851fe71f6a6ca79a146a7022e818378ea6721))
+
+
+### Trivial Changes
+
+* replace err-code with CodeError ([#82](https://github.com/libp2p/js-libp2p-webrtc/issues/82)) ([cfa6494](https://github.com/libp2p/js-libp2p-webrtc/commit/cfa6494c43c4edb977e70abe81a260bf0e03de73))
+* Update .github/workflows/semantic-pull-request.yml [skip ci] ([f0ae5e7](https://github.com/libp2p/js-libp2p-webrtc/commit/f0ae5e78a0469bd1129d7b242e4fb41f0b2ed49e))
+* Update .github/workflows/semantic-pull-request.yml [skip ci] ([4c8806c](https://github.com/libp2p/js-libp2p-webrtc/commit/4c8806c6d2a1a8eff48f0e2248203d48bd84c065))
+
 ## [1.0.4](https://github.com/libp2p/js-libp2p-webrtc/compare/v1.0.3...v1.0.4) (2023-02-22)
 
 
