@@ -88,10 +88,7 @@ play.describe('bundle ipfs with parceljs:', () => {
     // Peer connected '${serverAddr}'
     // Sending message '${message}'
     // Received message '${message}'
-    let connections = await page.textContent(output)
-
-    // temporary hack until rename is complete
-    connections = connections.replaceAll('webrtc-direct/', 'webrtc/')
+    const connections = await page.textContent(output)
 
     expect(connections).toContain(`Dialing '${serverAddr}'`)
     expect(connections).toContain(`Peer connected '${serverAddr}'`)
