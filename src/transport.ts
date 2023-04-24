@@ -184,6 +184,23 @@ export class WebRTCDirectTransport implements Transport {
       }
     }
 
+    const eventListeningName = isFirefox ? 'iceconnectionstatechange' : 'connectionstatechange'
+
+    peerConnection.addEventListener(eventListeningName, () => {
+      switch (peerConnection.connectionState) {
+        case 'failed':
+        case 'disconnected':
+        case 'closed':
+          maConn.close().catch((err) => {
+            log.error('error closing connection', err)
+          })
+          break
+
+        default:
+          break
+      }
+    })
+
     // Creating the connection before completion of the noise
     // handshake ensures that the stream opening callback is set up
     const maConn = new WebRTCMultiaddrConnection({
@@ -193,38 +210,6 @@ export class WebRTCDirectTransport implements Transport {
         open: Date.now()
       }
     })
-
-    if (isFirefox) {
-      peerConnection.addEventListener('oniceconnectionstatechange', () => {
-        switch (peerConnection.connectionState) {
-          case 'failed':
-          case 'disconnected':
-          case 'closed':
-            maConn.close().catch((err) => {
-              log.error('error closing connection', err)
-            })
-            break
-
-          default:
-            break
-        }
-      })
-    } else {
-      peerConnection.addEventListener('onconnectionstatechange', () => {
-        switch (peerConnection.connectionState) {
-          case 'failed':
-          case 'disconnected':
-          case 'closed':
-            maConn.close().catch((err) => {
-              log.error('error closing connection', err)
-            })
-            break
-
-          default:
-            break
-        }
-      })
-    }
 
     const muxerFactory = new DataChannelMuxerFactory(peerConnection)
 
