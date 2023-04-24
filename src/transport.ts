@@ -114,6 +114,7 @@ export class WebRTCDirectTransport implements Transport {
       namedCurve: 'P-256',
       hash: sdp.toSupportedHashFunction(remoteCerthash.name)
     } as any)
+
     const peerConnection = new RTCPeerConnection({ certificates: [certificate] })
 
     // create data channel for running the noise handshake. Once the data channel is opened,
@@ -158,18 +159,6 @@ export class WebRTCDirectTransport implements Transport {
 
     // wait for peerconnection.onopen to fire, or for the datachannel to open
     const handshakeDataChannel = await dataChannelOpenPromise
-
-    const myPeerId = this.components.peerId
-
-    // Do noise handshake.
-    // Set the Noise Prologue to libp2p-webrtc-noise:<FINGERPRINTS> before starting the actual Noise handshake.
-    // <FINGERPRINTS> is the concatenation of the of the two TLS fingerprints of A and B in their multihash byte representation, sorted in ascending order.
-    const fingerprintsPrologue = this.generateNoisePrologue(peerConnection, remoteCerthash.code, ma)
-
-    // Since we use the default crypto interface and do not use a static key or early data,
-    // we pass in undefined for these parameters.
-    const noise = Noise({ prologueBytes: fingerprintsPrologue })()
-
     const wrappedChannel = new WebRTCStream({ channel: handshakeDataChannel, stat: { direction: 'inbound', timeline: { open: 1 } } })
     const wrappedDuplex = {
       ...wrappedChannel,
@@ -182,6 +171,17 @@ export class WebRTCDirectTransport implements Transport {
         }
       }
     }
+
+    const myPeerId = this.components.peerId
+
+    // Do noise handshake.
+    // Set the Noise Prologue to libp2p-webrtc-noise:<FINGERPRINTS> before starting the actual Noise handshake.
+    // <FINGERPRINTS> is the concatenation of the of the two TLS fingerprints of A and B in their multihash byte representation, sorted in ascending order.
+    const fingerprintsPrologue = this.generateNoisePrologue(peerConnection, remoteCerthash.code, ma)
+
+    // Since we use the default crypto interface and do not use a static key or early data,
+    // we pass in undefined for these parameters.
+    const noise = Noise({ prologueBytes: fingerprintsPrologue })()
 
     // Creating the connection before completion of the noise
     // handshake ensures that the stream opening callback is set up
@@ -216,7 +216,7 @@ export class WebRTCDirectTransport implements Transport {
       throw invalidArgument('no local fingerprint found')
     }
 
-    const localFpString = localFingerprint.toLowerCase().replaceAll(':', '')
+    const localFpString = localFingerprint.trim().toLowerCase().replaceAll(':', '')
     const localFpArray = uint8arrayFromString(localFpString, 'hex')
     const local = multihashes.encode(localFpArray, hashCode)
     const remote: Uint8Array = sdp.mbdecoder.decode(sdp.certhash(ma))
