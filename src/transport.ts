@@ -98,6 +98,9 @@ export class WebRTCDirectTransport implements Transport {
    * Connect to a peer using a multiaddr
    */
   async _connect (ma: Multiaddr, options: WebRTCDialOptions): Promise<Connection> {
+    const controller = new AbortController()
+    const signal = controller.signal
+
     const remotePeerString = ma.getPeerId()
     if (remotePeerString === null) {
       throw inappropriateMultiaddr("we need to have the remote's PeerId")
@@ -194,13 +197,14 @@ export class WebRTCDirectTransport implements Transport {
           maConn.close().catch((err) => {
             log.error('error closing connection', err)
           }).finally(() => {
-            peerConnection.removeEventListener(eventListeningName, () => {})
+            // Remove the event listener once the connection is closed
+            controller.abort()
           })
           break
         default:
           break
       }
-    })
+    }, { signal })
 
     // Creating the connection before completion of the noise
     // handshake ensures that the stream opening callback is set up
