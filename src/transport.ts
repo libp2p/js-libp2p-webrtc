@@ -193,9 +193,10 @@ export class WebRTCDirectTransport implements Transport {
         case 'closed':
           maConn.close().catch((err) => {
             log.error('error closing connection', err)
+          }).finally(() => {
+            peerConnection.removeEventListener(eventListeningName, () => {})
           })
           break
-
         default:
           break
       }
