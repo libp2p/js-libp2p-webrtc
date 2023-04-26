@@ -45,11 +45,7 @@ const fingerprintRegex = /^a=fingerprint:(?:\w+-[0-9]+)\s(?<fingerprint>(:?[0-9a
 export function getFingerprintFromSdp (sdp: string): string | undefined {
   // const searchResult = fingerprintRegex.exec(sdp)
   const searchResult = sdp.match(fingerprintRegex)
-  if (searchResult == null) {
-    return ''
-  }
-
-  return searchResult.groups?.fingerprint
+  return searchResult?.groups?.fingerprint
 }
 /**
  * Get base2 | identity decoders
