@@ -149,6 +149,7 @@ export class DataChannelMuxer implements StreamMuxer {
       closeCb: this.wrapStreamEnd(closeCb)
     })
     this.streams.push(stream)
+    this.metrics?.increment({ outgoing_stream: true })
 
     return stream
   }

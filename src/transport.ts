@@ -143,7 +143,7 @@ export class WebRTCDirectTransport implements Transport {
       const handshakeTimeout = setTimeout(() => {
         const error = `Data channel was never opened: state: ${handshakeDataChannel.readyState}`
         log.error(error)
-        this.metrics?.dialerEvents.increment({ openError: true })
+        this.metrics?.dialerEvents.increment({ open_error: true })
         reject(dataChannelError('data', error))
       }, HANDSHAKE_TIMEOUT_MS)
 
@@ -159,7 +159,7 @@ export class WebRTCDirectTransport implements Transport {
         const error = `Error opening a data channel for handshaking: ${errorTarget}`
         log.error(error)
         // NOTE: We use unknown error here but this could potentially be considered a reset by some standards.
-        this.metrics?.dialerEvents.increment({ unknownError: true })
+        this.metrics?.dialerEvents.increment({ unknown_error: true })
         reject(dataChannelError('data', error))
       }
     })
@@ -205,7 +205,7 @@ export class WebRTCDirectTransport implements Transport {
       }
     }
 
-    const eventListeningName = isFirefox as boolean ? 'iceconnectionstatechange' : 'connectionstatechange'
+    const eventListeningName = isFirefox ? 'iceconnectionstatechange' : 'connectionstatechange'
 
     peerConnection.addEventListener(eventListeningName, () => {
       switch (peerConnection.connectionState) {
@@ -234,6 +234,9 @@ export class WebRTCDirectTransport implements Transport {
       },
       metrics: this.metrics?.dialerEvents
     })
+
+    // Track opened peer connection
+    this.metrics?.dialerEvents.increment({ peer_connection: true })
 
     const muxerFactory = new DataChannelMuxerFactory(peerConnection, this.metrics?.dialerEvents)
 
