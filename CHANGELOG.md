@@ -1,3 +1,24 @@
+## [1.1.9](https://github.com/libp2p/js-libp2p-webrtc/compare/v1.1.8...v1.1.9) (2023-04-26)
+
+
+### Documentation
+
+* update import in README example ([#141](https://github.com/libp2p/js-libp2p-webrtc/issues/141)) ([42275df](https://github.com/libp2p/js-libp2p-webrtc/commit/42275df0727cd729006cbf3fae300fc428c9ca51))
+
+## [1.1.8](https://github.com/libp2p/js-libp2p-webrtc/compare/v1.1.7...v1.1.8) (2023-04-25)
+
+
+### Bug Fixes
+
+* added peer connection state listener to emit closed events ([#134](https://github.com/libp2p/js-libp2p-webrtc/issues/134)) ([16e8503](https://github.com/libp2p/js-libp2p-webrtc/commit/16e85030e78ed9edb2ebecf81bac3ad33d622111)), closes [#138](https://github.com/libp2p/js-libp2p-webrtc/issues/138) [#138](https://github.com/libp2p/js-libp2p-webrtc/issues/138) [#138](https://github.com/libp2p/js-libp2p-webrtc/issues/138)
+
+## [1.1.7](https://github.com/libp2p/js-libp2p-webrtc/compare/v1.1.6...v1.1.7) (2023-04-24)
+
+
+### Dependencies
+
+* bump @libp2p/interface-peer-store from 1.2.9 to 2.0.0 ([#135](https://github.com/libp2p/js-libp2p-webrtc/issues/135)) ([2fc8399](https://github.com/libp2p/js-libp2p-webrtc/commit/2fc839912a65c310ca7c8935d1901cc56849a21d))
+
 ## [1.1.6](https://github.com/libp2p/js-libp2p-webrtc/compare/v1.1.5...v1.1.6) (2023-04-21)
 
 
