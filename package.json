@@ -133,12 +133,13 @@
     "lint": "aegir lint",
     "lint:fix": "aegir lint --fix",
     "clean": "aegir clean",
-    "dep-check": "aegir dep-check",
+    "dep-check": "aegir dep-check -i protons",
     "release": "aegir release"
   },
   "dependencies": {
     "@chainsafe/libp2p-noise": "^11.0.0",
     "@libp2p/interface-connection": "^4.0.0",
+    "@libp2p/interface-metrics": "^4.0.7",
     "@libp2p/interface-peer-id": "^2.0.0",
     "@libp2p/interface-peer-store": "^2.0.0",
     "@libp2p/interface-registrar": "^2.0.8",
@@ -151,7 +152,6 @@
     "@protobuf-ts/runtime": "^2.8.0",
     "abortable-iterator": "^4.0.2",
     "detect-browser": "^5.3.0",
-    "err-code": "^3.0.1",
     "it-length-prefixed": "^8.0.3",
     "it-merge": "^2.0.0",
     "it-pb-stream": "^3.2.1",
@@ -169,7 +169,6 @@
   "devDependencies": {
     "@libp2p/interface-mocks": "^9.0.0",
     "@libp2p/peer-id-factory": "^2.0.0",
-    "@protobuf-ts/plugin": "^2.8.0",
     "@protobuf-ts/protoc": "^2.8.0",
     "@types/uuid": "^9.0.1",
     "aegir": "^38.1.6",
