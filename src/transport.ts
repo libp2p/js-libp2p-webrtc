@@ -170,7 +170,9 @@ export class WebRTCDirectTransport implements Transport {
       source: {
         [Symbol.asyncIterator]: async function * () {
           for await (const list of wrappedChannel.source) {
-            yield list.subarray()
+            for (const buf of list) {
+              yield buf
+            }
           }
         }
       }

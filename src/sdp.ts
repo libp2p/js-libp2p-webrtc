@@ -43,7 +43,6 @@ export function getLocalFingerprint (pc: RTCPeerConnection): string | undefined 
 
 const fingerprintRegex = /^a=fingerprint:(?:\w+-[0-9]+)\s(?<fingerprint>(:?[0-9a-fA-F]{2})+)$/m
 export function getFingerprintFromSdp (sdp: string): string | undefined {
-  // const searchResult = fingerprintRegex.exec(sdp)
   const searchResult = sdp.match(fingerprintRegex)
   return searchResult?.groups?.fingerprint
 }
