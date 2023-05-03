@@ -170,7 +170,7 @@
     "@libp2p/peer-id-factory": "^2.0.0",
     "@protobuf-ts/plugin": "^2.8.0",
     "@protobuf-ts/protoc": "^2.8.0",
-    "aegir": "^38.1.6",
+    "aegir": "^39.0.4",
     "eslint-plugin-etc": "^2.0.2",
     "it-pair": "^2.0.3",
     "protons": "^7.0.2",
