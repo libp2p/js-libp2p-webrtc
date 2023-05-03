@@ -43,12 +43,12 @@ export class WebRTCMultiaddrConnection implements MultiaddrConnection {
   /**
    * The stream source, a no-op as the transport natively supports multiplexing
    */
-  source: Source<Uint8Array> = nopSource
+  source: AsyncGenerator<Uint8Array, any, unknown> = nopSource
 
   /**
    * The stream destination, a no-op as the transport natively supports multiplexing
    */
-  sink: Sink<Uint8Array, Promise<void>> = nopSink
+  sink: Sink<Source<Uint8Array>, Promise<void>> = nopSink
 
   constructor (init: WebRTCMultiaddrConnectionInit) {
     this.remoteAddr = init.remoteAddr
