@@ -1,9 +1,8 @@
-import type { MultiaddrConnection, MultiaddrConnectionTimeline } from '@libp2p/interface-connection'
 import { logger } from '@libp2p/logger'
+import { nopSink, nopSource } from './util.js'
+import type { MultiaddrConnection, MultiaddrConnectionTimeline } from '@libp2p/interface-connection'
 import type { Multiaddr } from '@multiformats/multiaddr'
 import type { Source, Sink } from 'it-stream-types'
-
-import { nopSink, nopSource } from './util.js'
 
 const log = logger('libp2p:webrtc:connection')
 
@@ -43,7 +42,7 @@ export class WebRTCMultiaddrConnection implements MultiaddrConnection {
   /**
    * The stream source, a no-op as the transport natively supports multiplexing
    */
-  source: AsyncGenerator<Uint8Array, any, unknown> = nopSource
+  source: AsyncGenerator<Uint8Array, any, unknown> = nopSource()
 
   /**
    * The stream destination, a no-op as the transport natively supports multiplexing
