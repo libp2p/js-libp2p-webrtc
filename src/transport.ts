@@ -43,7 +43,6 @@ export const CERTHASH_CODE: number = protocols('certhash').code
 /**
  * The peer for this transport
  */
-// @TODO(ddimaria): seems like an unnessary abstraction, consider removing
 export interface WebRTCDirectTransportComponents {
   peerId: PeerId
   metrics?: Metrics
@@ -54,9 +53,6 @@ export interface WebRTCMetrics {
 }
 
 export class WebRTCDirectTransport implements Transport {
-  /**
-   * The peer for this transport
-   */
   private readonly metrics?: WebRTCMetrics
   private readonly components: WebRTCDirectTransportComponents
 

@@ -1,15 +1,13 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 
-import type { Metrics, Metric, MetricGroup, Counter, CounterGroup } from '@libp2p/interface-metrics'
+import type { Metrics } from '@libp2p/interface-metrics'
 import * as underTest from './../src/transport.js'
 import { expectError } from './util.js'
 import { UnimplementedError } from './../src/error.js'
-import { stubObject } from 'sinon-ts'
-import { mockUpgrader } from '@libp2p/interface-mocks'
+import { mockMetrics, mockUpgrader } from '@libp2p/interface-mocks'
 import { CreateListenerOptions, symbol } from '@libp2p/interface-transport'
 import { multiaddr, Multiaddr } from '@multiformats/multiaddr'
 import { createEd25519PeerId } from '@libp2p/peer-id-factory'
-import * as sinon from 'sinon'
 import { expect, assert } from 'aegir/chai'
 
 function ignoredDialOption (): CreateListenerOptions {
@@ -22,45 +20,7 @@ describe('WebRTC Transport', () => {
   let components: underTest.WebRTCDirectTransportComponents
 
   before(async () => {
-    metrics = stubObject<Metrics>({
-      trackMultiaddrConnection: (_maConn) => {},
-      trackProtocolStream: (_stream, _connection) => {},
-      registerMetric: (_name, _options) => {
-        return stubObject<Metric>({
-          increment: () => {},
-          reset: () => {},
-          decrement: () => {},
-          update: () => {},
-          timer: () => {
-            return sinon.spy()
-          }
-        })
-      },
-      registerMetricGroup: (_name, _options) => {
-        return stubObject<MetricGroup>({
-          increment: () => {
-          },
-          reset: () => {},
-          decrement: () => {},
-          update: () => {},
-          timer: () => {
-            return sinon.spy()
-          }
-        })
-      },
-      registerCounter: (_name, _options) => {
-        return stubObject<Counter>({
-          increment: () => {},
-          reset: () => {}
-        })
-      },
-      registerCounterGroup: (_name, _options) => {
-        return stubObject<CounterGroup>({
-          increment: () => {},
-          reset: () => {}
-        })
-      }
-    })
+    metrics = mockMetrics()()
     components = {
       peerId: await createEd25519PeerId(),
       metrics
