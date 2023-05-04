@@ -2,7 +2,6 @@ import { logger } from '@libp2p/logger'
 import { abortableDuplex } from 'abortable-iterator'
 import { pbStream } from 'it-pb-stream'
 import pDefer, { type DeferredPromise } from 'p-defer'
-import { TimeoutController } from 'timeout-abort-controller'
 import { DataChannelMuxerFactory } from '../muxer.js'
 import * as pb from './pb/index.js'
 import { readCandidatesUntilConnected, resolveOnConnected } from './util.js'
@@ -17,9 +16,8 @@ const log = logger('libp2p:webrtc:peer')
 export type IncomingStreamOpts = { rtcConfiguration?: RTCConfiguration } & IncomingStreamData
 
 export async function handleIncomingStream ({ rtcConfiguration, stream: rawStream }: IncomingStreamOpts): Promise<[RTCPeerConnection, StreamMuxerFactory]> {
-  const timeoutController = new TimeoutController(DEFAULT_TIMEOUT)
-  const signal = timeoutController.signal
-  const stream = pbStream(abortableDuplex(rawStream, timeoutController.signal)).pb(pb.Message)
+  const signal = AbortSignal.timeout(DEFAULT_TIMEOUT)
+  const stream = pbStream(abortableDuplex(rawStream, signal)).pb(pb.Message)
   const pc = new RTCPeerConnection(rtcConfiguration)
   const muxerFactory = new DataChannelMuxerFactory(pc)
 
