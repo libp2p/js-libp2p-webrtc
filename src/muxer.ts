@@ -1,10 +1,10 @@
+import { WebRTCStream } from './stream.js'
+import { nopSink, nopSource } from './util.js'
 import type { Stream } from '@libp2p/interface-connection'
 import type { CounterGroup } from '@libp2p/interface-metrics'
 import type { StreamMuxer, StreamMuxerFactory, StreamMuxerInit } from '@libp2p/interface-stream-muxer'
 import type { Source, Sink } from 'it-stream-types'
-
-import { WebRTCStream } from './stream.js'
-import { nopSink, nopSource } from './util.js'
+import type { Uint8ArrayList } from 'uint8arraylist'
 
 export interface DataChannelMuxerFactoryInit {
   peerConnection: RTCPeerConnection
@@ -75,12 +75,12 @@ export class DataChannelMuxer implements StreamMuxer {
   /**
    * The stream source, a no-op as the transport natively supports multiplexing
    */
-  source: Source<Uint8Array> = nopSource
+  source: AsyncGenerator<Uint8Array, any, unknown> = nopSource()
 
   /**
    * The stream destination, a no-op as the transport natively supports multiplexing
    */
-  sink: Sink<Uint8Array, Promise<void>> = nopSink
+  sink: Sink<Source<Uint8Array | Uint8ArrayList>, Promise<void>> = nopSink
 
   constructor (peerConnection: RTCPeerConnection, streams: Stream[], readonly protocol: string = '/webrtc', init?: StreamMuxerInit, metrics?: CounterGroup) {
     /**
