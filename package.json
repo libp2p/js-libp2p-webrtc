@@ -152,7 +152,7 @@
     "@protobuf-ts/runtime": "^2.9.0",
     "abortable-iterator": "^4.0.2",
     "detect-browser": "^5.3.0",
-    "it-length-prefixed": "^8.0.3",
+    "it-length-prefixed": "^9.0.1",
     "it-merge": "^3.0.0",
     "it-pb-stream": "^4.0.1",
     "it-pipe": "^3.0.1",
