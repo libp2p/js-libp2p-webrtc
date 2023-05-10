@@ -45,7 +45,7 @@ const node = await createLibp2p({
       // by default we refuse to dial local addresses from the browser since they
       // are usually sent by remote peers broadcasting undialable multiaddrs but
       // here we are explicitly connecting to a local node so do not deny dialing
-      // and discovered address
+      // any discovered address
       return false
     }
   },
