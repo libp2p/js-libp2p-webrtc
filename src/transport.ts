@@ -189,13 +189,13 @@ export class WebRTCDirectTransport implements Transport {
     const wrappedDuplex = {
       ...wrappedChannel,
       sink: wrappedChannel.sink.bind(wrappedChannel),
-      source: async function * () {
+      source: (async function * () {
         for await (const list of wrappedChannel.source) {
           for (const buf of list) {
             yield buf
           }
         }
-      }()
+      }())
     }
 
     // Creating the connection before completion of the noise
