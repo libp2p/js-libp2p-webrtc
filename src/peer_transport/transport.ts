@@ -9,7 +9,6 @@ import { initiateConnection, handleIncomingStream } from './handler.js'
 import { WebRTCPeerListener } from './listener.js'
 import type { Connection } from '@libp2p/interface-connection'
 import type { PeerId } from '@libp2p/interface-peer-id'
-import type { PeerStore } from '@libp2p/interface-peer-store'
 import type { IncomingStreamData, Registrar } from '@libp2p/interface-registrar'
 import type { Startable } from '@libp2p/interfaces/startable'
 
@@ -28,7 +27,6 @@ export interface WebRTCTransportComponents {
   registrar: Registrar
   upgrader: Upgrader
   transportManager: TransportManager
-  peerStore: PeerStore
 }
 
 export class WebRTCTransport implements Transport, Startable {

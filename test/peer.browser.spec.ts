@@ -98,8 +98,7 @@ describe('webrtc filter', () => {
       transportManager: sinon.stub() as any,
       peerId: sinon.stub() as any,
       registrar: mockRegistrar(),
-      upgrader: mockUpgrader({}),
-      peerStore: sinon.stub() as any
+      upgrader: mockUpgrader({})
     }, {})
 
     const valid = [

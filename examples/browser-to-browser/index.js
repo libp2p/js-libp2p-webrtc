@@ -77,13 +77,7 @@ node.addEventListener("peer:disconnect", (event) => {
   updateConnList()
 })
 
-node.peerStore.addEventListener("change:multiaddrs", (event) => {
-  const { peerId } = event.detail
-
-  if (node.getMultiaddrs().length === 0 || !node.peerId.equals(peerId)) {
-    return
-  }
-
+node.addEventListener("self:peer:update", (event) => {
   node.getMultiaddrs().forEach((ma) => {
     if (ma.protoCodes().includes(CIRCUIT_RELAY_CODE)) {
       if (ma.protos().pop()?.name === 'p2p') {
