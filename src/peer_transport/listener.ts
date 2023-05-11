@@ -43,7 +43,7 @@ export class WebRTCPeerListener extends EventEmitter<ListenerEvents> implements 
     return this.listeners
       .map(l => l.getAddrs()
         .map(ma => {
-          return ma.encapsulate(`/p2p/${this.peerId}/webrtc/p2p/${this.peerId}`)
+          return ma.encapsulate(`/webrtc/p2p/${this.peerId}`)
         })
       )
       .flat()
