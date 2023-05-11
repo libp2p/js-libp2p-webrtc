@@ -16,9 +16,10 @@ import type { Startable } from '@libp2p/interfaces/startable'
 
 const log = logger('libp2p:webrtc:peer')
 
-export const TRANSPORT = '/webrtc'
-export const SIGNALING_PROTO_ID = '/webrtc-signaling/0.0.1'
-export const CODE = protocols('webrtc').code
+const WEBRTC_TRANSPORT = '/webrtc'
+const CIRCUIT_RELAY_TRANSPORT = '/p2p-circuit'
+const SIGNALING_PROTO_ID = '/webrtc-signaling/0.0.1'
+const WEBRTC_CODE = protocols('webrtc').code
 
 export interface WebRTCTransportInit {
   rtcConfiguration?: RTCConfiguration
@@ -68,15 +69,20 @@ export class WebRTCTransport implements Transport, Startable {
   filter (multiaddrs: Multiaddr[]): Multiaddr[] {
     return multiaddrs.filter((ma) => {
       const codes = ma.protoCodes()
-      return codes.includes(CODE)
+      return codes.includes(WEBRTC_CODE)
     })
   }
 
   private splitAddr (ma: Multiaddr): { baseAddr: Multiaddr, peerId: PeerId } {
-    const addrs = ma.toString().split(TRANSPORT)
+    const addrs = ma.toString().split(WEBRTC_TRANSPORT)
     if (addrs.length !== 2) {
       throw new CodeError('webrtc protocol was not present in multiaddr', codes.ERR_INVALID_MULTIADDR)
     }
+
+    if (!addrs[0].includes(CIRCUIT_RELAY_TRANSPORT)) {
+      throw new CodeError('p2p-circuit protocol was not present in multiaddr', codes.ERR_INVALID_MULTIADDR)
+    }
+
     // look for remote peerId
     let remoteAddr = multiaddr(addrs[0])
     const destination = multiaddr(addrs[1])
