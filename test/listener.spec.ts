@@ -7,8 +7,8 @@ import type { Listener, TransportManager } from '@libp2p/interface-transport'
 
 describe('webrtc private-to-private listener', () => {
   it('should only return relay addresses as webrtc listen addresses', async () => {
-    const relayedAddress = '/ip4/127.0.0./tcp/4034/ws/p2p-circuit'
-    const otherListenAddress = '/ip4/127.0.0./tcp/4001'
+    const relayedAddress = '/ip4/127.0.0.1/tcp/4034/ws/p2p-circuit'
+    const otherListenAddress = '/ip4/127.0.0.1/tcp/4001'
     const peerId = await createEd25519PeerId()
     const transportManager = stubInterface<TransportManager>()
 
