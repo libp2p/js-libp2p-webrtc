@@ -1,22 +1,23 @@
 import { noise as Noise } from '@chainsafe/libp2p-noise'
-import type { Connection } from '@libp2p/interface-connection'
-import type { PeerId } from '@libp2p/interface-peer-id'
-import { CreateListenerOptions, Listener, symbol, Transport } from '@libp2p/interface-transport'
+import { type CreateListenerOptions, type Listener, symbol, type Transport } from '@libp2p/interface-transport'
 import { logger } from '@libp2p/logger'
 import * as p from '@libp2p/peer-id'
-import type { Multiaddr } from '@multiformats/multiaddr'
-import * as multihashes from 'multihashes'
-import { fromString as uint8arrayFromString } from 'uint8arrays/from-string'
-import { concat } from 'uint8arrays/concat'
-import { dataChannelError, inappropriateMultiaddr, unimplemented, invalidArgument } from './error.js'
-import { WebRTCMultiaddrConnection } from './maconn.js'
-import { DataChannelMuxerFactory } from './muxer.js'
-import type { WebRTCDialOptions } from './options.js'
-import * as sdp from './sdp.js'
-import { WebRTCStream } from './stream.js'
-import { genUfrag } from './util.js'
 import { protocols } from '@multiformats/multiaddr'
-import { isFirefox } from './peer_transport/util.js'
+import * as multihashes from 'multihashes'
+import { concat } from 'uint8arrays/concat'
+import { fromString as uint8arrayFromString } from 'uint8arrays/from-string'
+import { dataChannelError, inappropriateMultiaddr, unimplemented, invalidArgument } from '../error.js'
+import { WebRTCMultiaddrConnection } from '../maconn.js'
+import { DataChannelMuxerFactory } from '../muxer.js'
+import { WebRTCStream } from '../stream.js'
+import { isFirefox } from '../util.js'
+import * as sdp from './sdp.js'
+import { genUfrag } from './util.js'
+import type { WebRTCDialOptions } from './options.js'
+import type { Connection } from '@libp2p/interface-connection'
+import type { CounterGroup, Metrics } from '@libp2p/interface-metrics'
+import type { PeerId } from '@libp2p/interface-peer-id'
+import type { Multiaddr } from '@multiformats/multiaddr'
 
 const log = logger('libp2p:webrtc:transport')
 
@@ -42,19 +43,29 @@ export const CERTHASH_CODE: number = protocols('certhash').code
 /**
  * The peer for this transport
  */
-// @TODO(ddimaria): seems like an unnessary abstraction, consider removing
 export interface WebRTCDirectTransportComponents {
   peerId: PeerId
+  metrics?: Metrics
+}
+
+export interface WebRTCMetrics {
+  dialerEvents: CounterGroup
 }
 
 export class WebRTCDirectTransport implements Transport {
-  /**
-   * The peer for this transport
-   */
+  private readonly metrics?: WebRTCMetrics
   private readonly components: WebRTCDirectTransportComponents
 
   constructor (components: WebRTCDirectTransportComponents) {
     this.components = components
+    if (components.metrics != null) {
+      this.metrics = {
+        dialerEvents: components.metrics.registerCounterGroup('libp2p_webrtc_dialer_events_total', {
+          label: 'event',
+          help: 'Total count of WebRTC dial events by type'
+        })
+      }
+    }
   }
 
   /**
@@ -83,16 +94,12 @@ export class WebRTCDirectTransport implements Transport {
   /**
    * Implement toString() for WebRTCTransport
    */
-  get [Symbol.toStringTag] (): string {
-    return '@libp2p/webrtc-direct'
-  }
+  readonly [Symbol.toStringTag] = '@libp2p/webrtc-direct'
 
   /**
    * Symbol.for('@libp2p/transport')
    */
-  get [symbol] (): true {
-    return true
-  }
+  readonly [symbol] = true
 
   /**
    * Connect to a peer using a multiaddr
@@ -118,6 +125,7 @@ export class WebRTCDirectTransport implements Transport {
       namedCurve: 'P-256',
       hash: sdp.toSupportedHashFunction(remoteCerthash.name)
     } as any)
+
     const peerConnection = new RTCPeerConnection({ certificates: [certificate] })
 
     // create data channel for running the noise handshake. Once the data channel is opened,
@@ -128,6 +136,7 @@ export class WebRTCDirectTransport implements Transport {
       const handshakeTimeout = setTimeout(() => {
         const error = `Data channel was never opened: state: ${handshakeDataChannel.readyState}`
         log.error(error)
+        this.metrics?.dialerEvents.increment({ open_error: true })
         reject(dataChannelError('data', error))
       }, HANDSHAKE_TIMEOUT_MS)
 
@@ -142,6 +151,8 @@ export class WebRTCDirectTransport implements Transport {
         const errorTarget = event.target?.toString() ?? 'not specified'
         const error = `Error opening a data channel for handshaking: ${errorTarget}`
         log.error(error)
+        // NOTE: We use unknown error here but this could potentially be considered a reset by some standards.
+        this.metrics?.dialerEvents.increment({ unknown_error: true })
         reject(dataChannelError('data', error))
       }
     })
@@ -178,14 +189,25 @@ export class WebRTCDirectTransport implements Transport {
     const wrappedDuplex = {
       ...wrappedChannel,
       sink: wrappedChannel.sink.bind(wrappedChannel),
-      source: {
-        [Symbol.asyncIterator]: async function * () {
-          for await (const list of wrappedChannel.source) {
-            yield list.subarray()
+      source: (async function * () {
+        for await (const list of wrappedChannel.source) {
+          for (const buf of list) {
+            yield buf
           }
         }
-      }
+      }())
     }
+
+    // Creating the connection before completion of the noise
+    // handshake ensures that the stream opening callback is set up
+    const maConn = new WebRTCMultiaddrConnection({
+      peerConnection,
+      remoteAddr: ma,
+      timeline: {
+        open: Date.now()
+      },
+      metrics: this.metrics?.dialerEvents
+    })
 
     const eventListeningName = isFirefox ? 'iceconnectionstatechange' : 'connectionstatechange'
 
@@ -206,23 +228,16 @@ export class WebRTCDirectTransport implements Transport {
       }
     }, { signal })
 
-    // Creating the connection before completion of the noise
-    // handshake ensures that the stream opening callback is set up
-    const maConn = new WebRTCMultiaddrConnection({
-      peerConnection,
-      remoteAddr: ma,
-      timeline: {
-        open: Date.now()
-      }
-    })
+    // Track opened peer connection
+    this.metrics?.dialerEvents.increment({ peer_connection: true })
 
-    const muxerFactory = new DataChannelMuxerFactory(peerConnection)
+    const muxerFactory = new DataChannelMuxerFactory(peerConnection, this.metrics?.dialerEvents)
 
     // For outbound connections, the remote is expected to start the noise handshake.
     // Therefore, we need to secure an inbound noise connection from the remote.
     await noise.secureInbound(myPeerId, wrappedDuplex, theirPeerId)
 
-    return await options.upgrader.upgradeOutbound(maConn, { skipProtection: true, skipEncryption: true, muxerFactory })
+    return options.upgrader.upgradeOutbound(maConn, { skipProtection: true, skipEncryption: true, muxerFactory })
   }
 
   /**
@@ -234,19 +249,12 @@ export class WebRTCDirectTransport implements Transport {
       throw invalidArgument('no local certificate')
     }
 
-    const localCert = pc.getConfiguration().certificates?.at(0)
-
-    if (localCert === undefined || localCert.getFingerprints().length === 0) {
-      throw invalidArgument('no fingerprint on local certificate')
+    const localFingerprint = sdp.getLocalFingerprint(pc)
+    if (localFingerprint == null) {
+      throw invalidArgument('no local fingerprint found')
     }
 
-    const localFingerprint = localCert.getFingerprints()[0]
-
-    if (localFingerprint.value === undefined) {
-      throw invalidArgument('no fingerprint on local certificate')
-    }
-
-    const localFpString = localFingerprint.value.replace(/:/g, '')
+    const localFpString = localFingerprint.trim().toLowerCase().replaceAll(':', '')
     const localFpArray = uint8arrayFromString(localFpString, 'hex')
     const local = multihashes.encode(localFpArray, hashCode)
     const remote: Uint8Array = sdp.mbdecoder.decode(sdp.certhash(ma))

@@ -2,14 +2,14 @@ import { mockConnection, mockMultiaddrConnection, mockRegistrar, mockStream, moc
 import { createEd25519PeerId } from '@libp2p/peer-id-factory'
 import { multiaddr } from '@multiformats/multiaddr'
 import { expect } from 'aegir/chai'
+import { detect } from 'detect-browser'
 import { pair } from 'it-pair'
 import { duplexPair } from 'it-pair/duplex'
 import { pbStream } from 'it-pb-stream'
-import sinon from 'sinon'
-import { initiateConnection, handleIncomingStream } from '../src/peer_transport/handler'
-import { Message } from '../src/peer_transport/pb/index.js'
-import { WebRTCTransport } from '../src/peer_transport/transport'
-import { detect } from 'detect-browser'
+import Sinon from 'sinon'
+import { initiateConnection, handleIncomingStream } from '../src/private-to-private/handler'
+import { Message } from '../src/private-to-private/pb/message.js'
+import { WebRTCTransport } from '../src/private-to-private/transport'
 
 const browser = detect()
 
@@ -26,7 +26,7 @@ describe('webrtc basic', () => {
     const receiverPeerConnectionPromise = handleIncomingStream({ stream: mockStream(receiver), connection })
     await expect(initiatorPeerConnectionPromise).to.be.fulfilled()
     await expect(receiverPeerConnectionPromise).to.be.fulfilled()
-    const [[pc0], [pc1]] = await Promise.all([initiatorPeerConnectionPromise, receiverPeerConnectionPromise])
+    const [{ pc: pc0 }, { pc: pc1 }] = await Promise.all([initiatorPeerConnectionPromise, receiverPeerConnectionPromise])
     if (isFirefox) {
       expect(pc0.iceConnectionState).eq('connected')
       expect(pc1.iceConnectionState).eq('connected')
@@ -95,11 +95,10 @@ describe('webrtc dialer', () => {
 describe('webrtc filter', () => {
   it('can filter multiaddrs to dial', async () => {
     const transport = new WebRTCTransport({
-      transportManager: sinon.stub() as any,
-      peerId: sinon.stub() as any,
+      transportManager: Sinon.stub() as any,
+      peerId: Sinon.stub() as any,
       registrar: mockRegistrar(),
-      upgrader: mockUpgrader(),
-      peerStore: sinon.stub() as any
+      upgrader: mockUpgrader({})
     }, {})
 
     const valid = [

@@ -1,3 +1,49 @@
+## [2.0.2](https://github.com/libp2p/js-libp2p-webrtc/compare/v2.0.1...v2.0.2) (2023-05-15)
+
+
+### Bug Fixes
+
+* use transport manager getListeners to get listen addresses ([#166](https://github.com/libp2p/js-libp2p-webrtc/issues/166)) ([2e144f9](https://github.com/libp2p/js-libp2p-webrtc/commit/2e144f977a2025aa3adce1816d5f7d0dc3aaa477))
+
+## [2.0.1](https://github.com/libp2p/js-libp2p-webrtc/compare/v2.0.0...v2.0.1) (2023-05-12)
+
+
+### Bug Fixes
+
+* remove protobuf-ts and split code into two folders ([#162](https://github.com/libp2p/js-libp2p-webrtc/issues/162)) ([64723a7](https://github.com/libp2p/js-libp2p-webrtc/commit/64723a726302edcdc7ec958a759c3c587a184d69))
+
+## [2.0.0](https://github.com/libp2p/js-libp2p-webrtc/compare/v1.2.0...v2.0.0) (2023-05-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* must be used with libp2p@0.45.x
+
+### Dependencies
+
+* update all libp2p deps for compat with libp2p@0.45.x ([#160](https://github.com/libp2p/js-libp2p-webrtc/issues/160)) ([b20875d](https://github.com/libp2p/js-libp2p-webrtc/commit/b20875d9f73e5cad05376db2d1228363dd1bce7d))
+
+## [1.2.0](https://github.com/libp2p/js-libp2p-webrtc/compare/v1.1.11...v1.2.0) (2023-05-09)
+
+
+### Features
+
+* export metrics ([#71](https://github.com/libp2p/js-libp2p-webrtc/issues/71)) ([b3cb445](https://github.com/libp2p/js-libp2p-webrtc/commit/b3cb445e226d6d4ddba092cf961d6178d9a19ac1))
+
+## [1.1.11](https://github.com/libp2p/js-libp2p-webrtc/compare/v1.1.10...v1.1.11) (2023-05-06)
+
+
+### Dependencies
+
+* upgrade transport interface to 4.0.1 ([#150](https://github.com/libp2p/js-libp2p-webrtc/issues/150)) ([dc61fa2](https://github.com/libp2p/js-libp2p-webrtc/commit/dc61fa27a2f53568b1f3b320971de166b5b243f9))
+
+## [1.1.10](https://github.com/libp2p/js-libp2p-webrtc/compare/v1.1.9...v1.1.10) (2023-05-03)
+
+
+### Bug Fixes
+
+* Fetch local fingerprint from SDP ([#109](https://github.com/libp2p/js-libp2p-webrtc/issues/109)) ([3673d6c](https://github.com/libp2p/js-libp2p-webrtc/commit/3673d6c2637c21e488e684cdff4eedbb7f5b3692))
+
 ## [1.1.9](https://github.com/libp2p/js-libp2p-webrtc/compare/v1.1.8...v1.1.9) (2023-04-26)
 
 

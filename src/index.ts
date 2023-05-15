@@ -1,7 +1,7 @@
+import { WebRTCTransport } from './private-to-private/transport.js'
+import { WebRTCDirectTransport, type WebRTCDirectTransportComponents } from './private-to-public/transport.js'
+import type { WebRTCTransportComponents, WebRTCTransportInit } from './private-to-private/transport.js'
 import type { Transport } from '@libp2p/interface-transport'
-import type { WebRTCTransportComponents, WebRTCTransportInit } from './peer_transport/transport.js'
-import { WebRTCTransport } from './peer_transport/transport.js'
-import { WebRTCDirectTransport, WebRTCDirectTransportComponents } from './transport.js'
 
 function webRTCDirect (): (components: WebRTCDirectTransportComponents) => Transport {
   return (components: WebRTCDirectTransportComponents) => new WebRTCDirectTransport(components)

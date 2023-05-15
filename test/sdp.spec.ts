@@ -1,6 +1,6 @@
 import { multiaddr } from '@multiformats/multiaddr'
 import { expect } from 'aegir/chai'
-import * as underTest from '../src/sdp.js'
+import * as underTest from '../src/private-to-public/sdp.js'
 
 const sampleMultiAddr = multiaddr('/ip4/0.0.0.0/udp/56093/webrtc/certhash/uEiByaEfNSLBexWBNFZy_QB1vAKEj7JAXDizRs4_SnTflsQ')
 const sampleCerthash = 'uEiByaEfNSLBexWBNFZy_QB1vAKEj7JAXDizRs4_SnTflsQ'
@@ -51,6 +51,11 @@ describe('SDP', () => {
       'SHA-256 72:68:47:CD:48:B0:5E:C5:60:4D:15:9C:BF:40:1D:6F:00:A1:23:EC:90:17:0E:2C:D1:B3:8F:D2:9D:37:E5:B1',
       '726847cd48b05ec5604d159cbf401d6f00a123ec90170e2cd1b38fd29d37e5b1'
     ])
+  })
+
+  it('extracts a fingerprint from sdp', () => {
+    const fingerprint = underTest.getFingerprintFromSdp(sampleSdp)
+    expect(fingerprint).to.eq('72:68:47:CD:48:B0:5E:C5:60:4D:15:9C:BF:40:1D:6F:00:A1:23:EC:90:17:0E:2C:D1:B3:8F:D2:9D:37:E5:B1')
   })
 
   it('munges the ufrag and pwd in a SDP', () => {
