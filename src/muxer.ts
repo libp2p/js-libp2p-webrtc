@@ -1,4 +1,5 @@
 import { createStream } from './stream.js'
+import type { DataChannelOpts } from './stream.js'
 import { nopSink, nopSource } from './util.js'
 import type { Stream } from '@libp2p/interface-connection'
 import type { CounterGroup } from '@libp2p/interface-metrics'
@@ -6,38 +7,75 @@ import type { StreamMuxer, StreamMuxerFactory, StreamMuxerInit } from '@libp2p/i
 import type { Source, Sink } from 'it-stream-types'
 import type { Uint8ArrayList } from 'uint8arraylist'
 
+const PROTOCOL = '/webrtc'
+
 export interface DataChannelMuxerFactoryInit {
+  /**
+   * WebRTC Peer Connection
+   */
   peerConnection: RTCPeerConnection
+
+  /**
+   * Optional metrics for this data channel muxer
+   */
   metrics?: CounterGroup
+
+  /**
+   * Data channel options
+   */
+  dataChannelOptions?: Partial<DataChannelOpts>
+
+  /**
+   * The protocol to use
+   */
+  protocol?: string
 }
 
 export class DataChannelMuxerFactory implements StreamMuxerFactory {
+  public readonly protocol: string
+
   /**
    * WebRTC Peer Connection
    */
   private readonly peerConnection: RTCPeerConnection
   private streamBuffer: Stream[] = []
   private readonly metrics?: CounterGroup
+  private dataChannelOptions?: Partial<DataChannelOpts>
 
-  constructor (peerConnection: RTCPeerConnection, metrics?: CounterGroup, readonly protocol = '/webrtc') {
-    this.peerConnection = peerConnection
+  constructor (init: DataChannelMuxerFactoryInit) {
+    this.peerConnection = init.peerConnection
+    this.metrics = init.metrics
+    this.protocol = init.protocol ?? PROTOCOL
+    this.dataChannelOptions = init.dataChannelOptions
+
     // store any datachannels opened before upgrade has been completed
     this.peerConnection.ondatachannel = ({ channel }) => {
       const stream = createStream({
         channel,
         direction: 'inbound',
+        dataChannelOptions: init.dataChannelOptions,
         onEnd: () => {
           this.streamBuffer = this.streamBuffer.filter(s => s.id !== stream.id)
         }
       })
       this.streamBuffer.push(stream)
     }
-    this.metrics = metrics
   }
 
-  createStreamMuxer (init?: StreamMuxerInit | undefined): StreamMuxer {
-    return new DataChannelMuxer(this.peerConnection, this.streamBuffer, this.protocol, init, this.metrics)
+  createStreamMuxer (init?: StreamMuxerInit): StreamMuxer {
+    return new DataChannelMuxer({
+      ...init,
+      peerConnection: this.peerConnection,
+      dataChannelOptions: this.dataChannelOptions,
+      metrics: this.metrics,
+      streams: this.streamBuffer,
+      protocol: this.protocol
+    })
   }
+}
+
+export interface DataChannelMuxerInit extends DataChannelMuxerFactoryInit, StreamMuxerInit {
+  streams: Stream[]
 }
 
 /**
@@ -45,24 +83,14 @@ export class DataChannelMuxerFactory implements StreamMuxerFactory {
  */
 export class DataChannelMuxer implements StreamMuxer {
   /**
-   * WebRTC Peer Connection
-   */
-  private readonly peerConnection: RTCPeerConnection
-
-  /**
-   * Optional metrics for this data channel muxer
-   */
-  private readonly metrics?: CounterGroup
-
-  /**
    * Array of streams in the data channel
    */
-  streams: Stream[] = []
+  public streams: Stream[]
+  public protocol: string
 
-  /**
-   * Initialized stream muxer
-   */
-  init?: StreamMuxerInit
+  private peerConnection: RTCPeerConnection
+  private dataChannelOptions?: DataChannelOpts
+  private readonly metrics?: CounterGroup
 
   /**
    * Close or abort all tracked streams and stop the muxer
@@ -79,16 +107,11 @@ export class DataChannelMuxer implements StreamMuxer {
    */
   sink: Sink<Source<Uint8Array | Uint8ArrayList>, Promise<void>> = nopSink
 
-  constructor (peerConnection: RTCPeerConnection, streams: Stream[], readonly protocol: string = '/webrtc', init?: StreamMuxerInit, metrics?: CounterGroup) {
-    /**
-     * Initialized stream muxer
-     */
-    this.init = init
-
-    /**
-     * WebRTC Peer Connection
-     */
-    this.peerConnection = peerConnection
+  constructor (readonly init: DataChannelMuxerInit) {
+    this.streams = init.streams
+    this.peerConnection = init.peerConnection
+    this.protocol = init.protocol ?? PROTOCOL
+    this.metrics = init.metrics
 
     /**
      * Fired when a data channel has been added to the connection has been
@@ -100,6 +123,7 @@ export class DataChannelMuxer implements StreamMuxer {
       const stream = createStream({
         channel,
         direction: 'inbound',
+        dataChannelOptions: this.dataChannelOptions,
         onEnd: () => {
           this.streams = this.streams.filter(s => s.id !== stream.id)
           this.metrics?.increment({ stream_end: true })
@@ -126,6 +150,7 @@ export class DataChannelMuxer implements StreamMuxer {
     const stream = createStream({
       channel,
       direction: 'outbound',
+      dataChannelOptions: this.dataChannelOptions,
       onEnd: () => {
         this.streams = this.streams.filter(s => s.id !== stream.id)
         this.metrics?.increment({ stream_end: true })
