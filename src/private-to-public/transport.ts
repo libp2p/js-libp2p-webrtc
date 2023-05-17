@@ -9,7 +9,7 @@ import { fromString as uint8arrayFromString } from 'uint8arrays/from-string'
 import { dataChannelError, inappropriateMultiaddr, unimplemented, invalidArgument } from '../error.js'
 import { WebRTCMultiaddrConnection } from '../maconn.js'
 import { DataChannelMuxerFactory } from '../muxer.js'
-import { WebRTCStream } from '../stream.js'
+import { createStream } from '../stream.js'
 import { isFirefox } from '../util.js'
 import * as sdp from './sdp.js'
 import { genUfrag } from './util.js'
@@ -185,7 +185,7 @@ export class WebRTCDirectTransport implements Transport {
     // we pass in undefined for these parameters.
     const noise = Noise({ prologueBytes: fingerprintsPrologue })()
 
-    const wrappedChannel = new WebRTCStream({ channel: handshakeDataChannel, stat: { direction: 'inbound', timeline: { open: 1 } } })
+    const wrappedChannel = createStream({ channel: handshakeDataChannel, direction: 'inbound' })
     const wrappedDuplex = {
       ...wrappedChannel,
       sink: wrappedChannel.sink.bind(wrappedChannel),

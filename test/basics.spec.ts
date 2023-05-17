@@ -8,6 +8,7 @@ import { WebRTC } from '@multiformats/mafmt'
 import { multiaddr } from '@multiformats/multiaddr'
 import { expect } from 'aegir/chai'
 import all from 'it-all'
+import map from 'it-map'
 import { pipe } from 'it-pipe'
 import { createLibp2p } from 'libp2p'
 import { circuitRelayTransport } from 'libp2p/circuit-relay'
@@ -98,6 +99,7 @@ describe('basics', () => {
     const output = await pipe(
       input,
       stream,
+      (source) => map(source, list => list.subarray()),
       async (source) => all(source)
     )
 
