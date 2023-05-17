@@ -45,7 +45,7 @@ describe('Max message size', () => {
     expect(sent).to.deep.equals([messageLengthEncoded])
   })
 
-  it(`sends messages greather ${MAX_MESSAGE_SIZE} bytes in parts`, async () => {
+  it(`sends messages greater than ${MAX_MESSAGE_SIZE} bytes in parts`, async () => {
     const sent: Uint8Array[] = []
     const data = new Uint8Array(MAX_MESSAGE_SIZE - 4)
     const p = pushable()
