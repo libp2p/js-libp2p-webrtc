@@ -7,6 +7,7 @@ import { codes } from '../error.js'
 import { WebRTCMultiaddrConnection } from '../maconn.js'
 import { initiateConnection, handleIncomingStream } from './handler.js'
 import { WebRTCPeerListener } from './listener.js'
+import type { DataChannelOpts } from '../stream.js'
 import type { Connection } from '@libp2p/interface-connection'
 import type { Libp2pEvents } from '@libp2p/interface-libp2p'
 import type { PeerId } from '@libp2p/interface-peer-id'
@@ -23,6 +24,7 @@ const WEBRTC_CODE = protocols('webrtc').code
 
 export interface WebRTCTransportInit {
   rtcConfiguration?: RTCConfiguration
+  dataChannel?: Partial<DataChannelOpts>
 }
 
 export interface WebRTCTransportComponents {
@@ -38,7 +40,7 @@ export class WebRTCTransport implements Transport, Startable {
 
   constructor (
     private readonly components: WebRTCTransportComponents,
-    private readonly init: WebRTCTransportInit
+    private readonly init: WebRTCTransportInit = {}
   ) {
   }
 
@@ -126,6 +128,7 @@ export class WebRTCTransport implements Transport, Startable {
       const { pc, muxerFactory, remoteAddress } = await initiateConnection({
         stream: signalingStream,
         rtcConfiguration: this.init.rtcConfiguration,
+        dataChannelOptions: this.init.dataChannel,
         signal: options.signal
       })
 
@@ -157,7 +160,8 @@ export class WebRTCTransport implements Transport, Startable {
       const { pc, muxerFactory, remoteAddress } = await handleIncomingStream({
         rtcConfiguration: this.init.rtcConfiguration,
         connection,
-        stream
+        stream,
+        dataChannelOptions: this.init.dataChannel
       })
 
       await this.components.upgrader.upgradeInbound(new WebRTCMultiaddrConnection({
