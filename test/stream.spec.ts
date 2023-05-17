@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 
 import { expect } from 'aegir/chai'
+import length from 'it-length'
 import * as lengthPrefixed from 'it-length-prefixed'
 import { pushable } from 'it-pushable'
 import { Uint8ArrayList } from 'uint8arraylist'
 import { Message } from '../src/pb/message.js'
 import { createStream } from '../src/stream.js'
-import length from 'it-length'
 
 const mockDataChannel = (opts: { send: (bytes: Uint8Array) => void, bufferedAmount?: number }): RTCDataChannel => {
   return {
@@ -56,8 +56,8 @@ describe('Max message size', () => {
     const p = pushable()
 
     // Make sure that the data that ought to be sent will result in a message with exactly MAX_MESSAGE_SIZE + 1
-    //const messageLengthEncoded = lengthPrefixed.encode.single(Message.encode({ message: data })).subarray()
-    //expect(messageLengthEncoded.length).eq(MAX_MESSAGE_SIZE + 1)
+    // const messageLengthEncoded = lengthPrefixed.encode.single(Message.encode({ message: data })).subarray()
+    // expect(messageLengthEncoded.length).eq(MAX_MESSAGE_SIZE + 1)
 
     const webrtcStream = createStream({
       channel: mockDataChannel({

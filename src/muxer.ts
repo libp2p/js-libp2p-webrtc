@@ -1,6 +1,6 @@
 import { createStream } from './stream.js'
-import type { DataChannelOpts } from './stream.js'
 import { nopSink, nopSource } from './util.js'
+import type { DataChannelOpts } from './stream.js'
 import type { Stream } from '@libp2p/interface-connection'
 import type { CounterGroup } from '@libp2p/interface-metrics'
 import type { StreamMuxer, StreamMuxerFactory, StreamMuxerInit } from '@libp2p/interface-stream-muxer'
@@ -40,7 +40,7 @@ export class DataChannelMuxerFactory implements StreamMuxerFactory {
   private readonly peerConnection: RTCPeerConnection
   private streamBuffer: Stream[] = []
   private readonly metrics?: CounterGroup
-  private dataChannelOptions?: Partial<DataChannelOpts>
+  private readonly dataChannelOptions?: Partial<DataChannelOpts>
 
   constructor (init: DataChannelMuxerFactoryInit) {
     this.peerConnection = init.peerConnection
@@ -88,8 +88,8 @@ export class DataChannelMuxer implements StreamMuxer {
   public streams: Stream[]
   public protocol: string
 
-  private peerConnection: RTCPeerConnection
-  private dataChannelOptions?: DataChannelOpts
+  private readonly peerConnection: RTCPeerConnection
+  private readonly dataChannelOptions?: DataChannelOpts
   private readonly metrics?: CounterGroup
 
   /**
