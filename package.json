@@ -125,6 +125,7 @@
   "scripts": {
     "generate": "protons src/private-to-private/pb/message.proto src/pb/message.proto",
     "build": "aegir build",
+    "prepare": "npm run build",
     "test": "aegir test -t browser",
     "test:chrome": "aegir test -t browser --cov",
     "test:firefox": "aegir test -t browser --browser firefox",
