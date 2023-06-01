@@ -148,7 +148,7 @@ export class WebRTCTransport implements Transport, Startable {
 }
 
 export function splitAddr (ma: Multiaddr): { baseAddr: Multiaddr, peerId: PeerId } {
-  const addrs = ma.toString().split(WEBRTC_TRANSPORT)
+  const addrs = ma.toString().split(WEBRTC_TRANSPORT + '/')
   if (addrs.length !== 2) {
     throw new CodeError('webrtc protocol was not present in multiaddr', codes.ERR_INVALID_MULTIADDR)
   }
@@ -159,7 +159,7 @@ export function splitAddr (ma: Multiaddr): { baseAddr: Multiaddr, peerId: PeerId
 
   // look for remote peerId
   let remoteAddr = multiaddr(addrs[0])
-  const destination = multiaddr(addrs[1])
+  const destination = multiaddr('/' + addrs[1])
 
   const destinationIdString = destination.getPeerId()
   if (destinationIdString == null) {
