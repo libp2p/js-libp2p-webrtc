@@ -48,7 +48,7 @@ import { noise } from '@chainsafe/libp2p-noise'
 import { multiaddr } from '@multiformats/multiaddr'
 import first from 'it-first'
 import { pipe } from 'it-pipe'
-import { fromString, toString } from 'uint8arrays
+import { fromString, toString } from 'uint8arrays'
 import { webRTC } from '@libp2p/webrtc'
 
 const node = await createLibp2p({
