@@ -1,3 +1,44 @@
+## [2.0.11](https://github.com/libp2p/js-libp2p-webrtc/compare/v2.0.10...v2.0.11) (2023-06-15)
+
+
+### Trivial Changes
+
+* Update .github/workflows/semantic-pull-request.yml [skip ci] ([2cb3586](https://github.com/libp2p/js-libp2p-webrtc/commit/2cb3586fb0818235083554d8581694a65b00b31f))
+* Update .github/workflows/stale.yml [skip ci] ([c80d4e9](https://github.com/libp2p/js-libp2p-webrtc/commit/c80d4e9cb2eae1ce721e0bcf8c78f79a0f49aea5))
+
+
+### Dependencies
+
+* bump p-event from 5.0.1 to 6.0.0 ([#182](https://github.com/libp2p/js-libp2p-webrtc/issues/182)) ([4df61fb](https://github.com/libp2p/js-libp2p-webrtc/commit/4df61fbdebb7ccd9c75408dc1d7fcc076a430433))
+
+## [2.0.10](https://github.com/libp2p/js-libp2p-webrtc/compare/v2.0.9...v2.0.10) (2023-06-12)
+
+
+### Bug Fixes
+
+* add browser-to-browser test for bi-directional communication ([#172](https://github.com/libp2p/js-libp2p-webrtc/issues/172)) ([1ec3d8a](https://github.com/libp2p/js-libp2p-webrtc/commit/1ec3d8a8b611d5227f430037e2547fd86d115eaa))
+
+## [2.0.9](https://github.com/libp2p/js-libp2p-webrtc/compare/v2.0.8...v2.0.9) (2023-06-12)
+
+
+### Dependencies
+
+* **dev:** bump delay from 5.0.0 to 6.0.0 ([#169](https://github.com/libp2p/js-libp2p-webrtc/issues/169)) ([104cbf0](https://github.com/libp2p/js-libp2p-webrtc/commit/104cbf0e2009961656cda530925089dc126b19a8))
+
+## [2.0.8](https://github.com/libp2p/js-libp2p-webrtc/compare/v2.0.7...v2.0.8) (2023-06-12)
+
+
+### Tests
+
+* add a test for large transfers ([#175](https://github.com/libp2p/js-libp2p-webrtc/issues/175)) ([0f60060](https://github.com/libp2p/js-libp2p-webrtc/commit/0f60060c9ceaf2bf2142df25f32174112edf6ec9))
+
+## [2.0.7](https://github.com/libp2p/js-libp2p-webrtc/compare/v2.0.6...v2.0.7) (2023-06-07)
+
+
+### Tests
+
+* actually run firefox tests on firefox ([#176](https://github.com/libp2p/js-libp2p-webrtc/issues/176)) ([386a607](https://github.com/libp2p/js-libp2p-webrtc/commit/386a6071923e6cb1d89c51b73dada306b7cc243f))
+
 ## [2.0.6](https://github.com/libp2p/js-libp2p-webrtc/compare/v2.0.5...v2.0.6) (2023-06-04)
 
 
