@@ -85,17 +85,6 @@ describe('basics', () => {
     remoteNode = await createNode()
   })
 
-  // This is currently causing issues on macOS runs
-  // afterEach(async () => {
-  //   if (localNode != null) {
-  //     await localNode.stop()
-  //   }
-
-  //   if (remoteNode != null) {
-  //     await remoteNode.stop()
-  //   }
-  // })
-
   it('can dial through a relay', async () => {
     const connection = await connectNodes()
 
